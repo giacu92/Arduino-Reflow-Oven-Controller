@@ -105,7 +105,7 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 
 // ***** PIN ASSIGNMENT *****
-#define ssrPin             6
+#define ssrPin             13
 #define thermocoupleSOPin  5
 #define thermocoupleCSPin  4
 #define thermocoupleCLKPin 3
@@ -180,7 +180,7 @@ void setup()
   lcd.clear();
   lcd.print("GFE Hand Made");
   lcd.setCursor(0, 1);
-  lcd.print("Reflow Oven 1.20");
+  lcd.print("Reflow Oven 1.1");
 
   digitalWrite(buzzerPin, LOW);
   delay(3000);
@@ -244,12 +244,14 @@ void loop() {
 
     // Clear LCD
     lcd.clear();
-    // Print Stop Button
-    lcd.setCursor(0,1);
-    lcd.print("stop");
     lcd.setCursor(11,1);
     if(reflowStatus == REFLOW_STATUS_ON)
+    {
       lcd.print(type);
+      // Print Stop Button
+      lcd.setCursor(0,1);
+      lcd.print("stop");
+      }
     else
       lcd.print("start");
     
