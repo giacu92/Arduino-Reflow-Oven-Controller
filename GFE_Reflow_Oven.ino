@@ -90,7 +90,7 @@ reflowStatus_t;
 // ***** LCD MESSAGES *****
 const char* lcdMessagesReflowStatus[] = {
   "Ready",
-  "Pre-heat",
+  "Preheat",
   "Soak",
   "Reflow",
   "Cool",
@@ -106,8 +106,8 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 // ***** PIN ASSIGNMENT *****
 #define ssrPin             13
-#define thermocoupleSOPin  5
-#define thermocoupleCSPin  4
+#define thermocoupleSOPin  11 //5
+#define thermocoupleCSPin  2  //4
 #define thermocoupleCLKPin 3
 #define lcdRsPin           8
 #define lcdEPin            9
@@ -259,7 +259,7 @@ void loop() {
     lcd.setCursor(0,0);
     lcd.print(lcdMessagesReflowStatus[reflowState]);
     // Move the cursor to the 2 line
-    lcd.setCursor(10, 0);
+    lcd.setCursor(9, 0);
 
     // If currently in error state
     if (reflowState == REFLOW_STATE_ERROR)
@@ -452,14 +452,14 @@ void loop() {
         // Time to shift the Relay Window
         windowStartTime += windowSize;
       }
-      if(output > (now - windowStartTime)) 
-        digitalWrite(ssrPin, HIGH);
-      else 
-        digitalWrite(ssrPin, LOW);
+      if(output > (now - windowStartTime))  digitalWrite(ssrPin, HIGH);
+      else                                  digitalWrite(ssrPin, LOW);
     }
     // Reflow oven process is off, ensure oven is off
     else 
     {
       digitalWrite(ssrPin, LOW);
+      lcd.setCursor(7,1);
+      lcd.print(" ");
     }
 }
