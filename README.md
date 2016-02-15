@@ -18,7 +18,10 @@ The momentary switches must be connected as shown:
 
 In this way A0 can be used to detect which button is pressed.
 
-The board is on the fab and will look like this :)
-![Board](http://i64.tinypic.com/qrgcq9.png)
+I previously built a breadboard version and now finally developed a board. Can't wait them to arrive! they're on fab right now..
+![Board](http://i68.tinypic.com/24o6quf.jpg)
 
-This project is updating during theese days (15 Feb 2016). Contact me for anything :)
+The board and all the electronics will be put inside a 3D printed box. This how it will looks like..
+![Box](http://i63.tinypic.com/ae1bwy.jpg)
+
+This project is under continuous updating (15 Feb 2016). Contact me for anything :)
