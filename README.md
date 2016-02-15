@@ -18,4 +18,7 @@ The momentary switches must be connected as shown:
 
 In this way A0 can be used to detect which button is pressed.
 
+The board is on the fab and will look like this :)
+![Board](http://i64.tinypic.com/qrgcq9.png)
+
 This project is updating during theese days (15 Feb 2016). Contact me for anything :)
