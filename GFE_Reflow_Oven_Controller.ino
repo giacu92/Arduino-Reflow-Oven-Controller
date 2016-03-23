@@ -105,16 +105,16 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 
 // ***** PIN ASSIGNMENT *****
-#define ssrPin             13
-#define thermocoupleSOPin  11 //5
-#define thermocoupleCSPin  2  //4
+#define ssrPin             6
+#define thermocoupleSOPin  5
+#define thermocoupleCSPin  4
 #define thermocoupleCLKPin 3
-#define lcdRsPin           8
-#define lcdEPin            9
-#define lcdD4Pin           4
-#define lcdD5Pin           5
-#define lcdD6Pin           6
-#define lcdD7Pin           7
+#define lcdRsPin           9
+#define lcdEPin            10
+#define lcdD4Pin           A5
+#define lcdD5Pin           A4
+#define lcdD6Pin           A3
+#define lcdD7Pin           A2
 #define ledRedPin          8
 #define buzzerPin          7
 #define switchPin          A0
@@ -265,7 +265,7 @@ void loop() {
     if (reflowState == REFLOW_STATE_ERROR)
     {
       // No thermocouple wire connected
-      lcd.print("TC Error!");
+      lcd.print("TC Err");
     }
     else
     {
