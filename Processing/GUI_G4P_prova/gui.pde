@@ -31,6 +31,7 @@ public void button1_click2(GButton source, GEvent event) { //_CODE_:button_clear
 
 public void button2_click2(GButton source, GEvent event) { //_CODE_:button_stop:782228:
   println("button2 - GButton >> GEvent." + event + " @ " + millis());
+  myPort.write(999);
 } //_CODE_:button_stop:782228:
 
 public void dropList1_click1(GDropList source, GEvent event) { //_CODE_:COM_list:833361:
@@ -44,6 +45,8 @@ public void button3_click1(GButton source, GEvent event) { //_CODE_:button_conne
   myPort = new Serial(this, COM_list.getSelectedText(), 57600);
   serial_ID.setText("connected to: " + COM_list.getSelectedText());
   button_connect.setLocalColorScheme(GCScheme.BLUE_SCHEME);
+  labelX.setVisible(true);
+  labelY.setVisible(true);
   
 } //_CODE_:button_connect:882005:
 
@@ -76,7 +79,7 @@ public void createGUI(){
   button_stop = new GButton(this, 660, 390, 80, 50);
   button_stop.setText("stop");
   button_stop.addEventHandler(this, "button2_click2");
-  COM_list = new GDropList(this, 60, 10, 239, 80, 3);
+  COM_list = new GDropList(this, 60, 10, 240, 80, 3);
   COM_list.setItems(loadStrings("list_833361"), 0);
   COM_list.addEventHandler(this, "dropList1_click1");
   button_connect = new GButton(this, 330, 10, 80, 50);
@@ -86,6 +89,14 @@ public void createGUI(){
   textfield1 = new GTextField(this, 450, 40, 300, 20, G4P.SCROLLBARS_NONE);
   textfield1.setOpaque(true);
   textfield1.addEventHandler(this, "textfield1_change1");
+  labelX = new GLabel(this, 120, 40, 80, 20);
+  labelX.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
+  labelX.setText("x:");
+  labelX.setOpaque(false);
+  labelY = new GLabel(this, 220, 40, 80, 20);
+  labelY.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
+  labelY.setText("y:");
+  labelY.setOpaque(false);
 }
 
 // Variable declarations 
@@ -98,3 +109,5 @@ GButton button_stop;
 GDropList COM_list; 
 GButton button_connect; 
 GTextField textfield1; 
+GLabel labelX; 
+GLabel labelY; 
