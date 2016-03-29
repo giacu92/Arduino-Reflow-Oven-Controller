@@ -11,13 +11,21 @@ void profileSet()
 
   int val = 1024;
 
-  while(val > 1000) // need a pull-up resistor (10KΩ)
+  while(val > 1000 && data == 0) // need a pull-up resistor (10KΩ)
   {
-    delay(100);
     val = analogRead(switchPin);
+    if(Serial.available() > 0)
+    {
+      digitalWrite(13,HIGH);
+      data = Serial.read();
+      delay(100);
+    }
+    delay(100);
+    digitalWrite(13,LOW);
+    //Serial.println(reflowStatus);
   }
 
-  if (val < 30) //left button pressed => LEADED_PROFILE
+  if (val < 30 || data == 10) //right button pressed => LEADED_PROFILE
   {
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 177;
@@ -25,7 +33,7 @@ void profileSet()
     type = "  (L)";
   }
     
-  else
+  else if (val >= 30 || data == 100)
   {
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 200;
@@ -33,5 +41,6 @@ void profileSet()
     type = " (LF)";
   }
 
+  data = 0;
   delay(1000);
 }

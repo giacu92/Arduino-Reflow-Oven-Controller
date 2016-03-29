@@ -1,35 +1,35 @@
 
 /*
- * Revision  Description
- * ========  ===========
- * 1.1       Arduino Nano v3 for GFE Hand Made Reflow Oven Controller board v1.1 
- *           - Compiled for Arduino Nano.
- *           - Display changed to 16x2 Hitachi HD44780 Compatible.
- *           - added data output to diplay temperature vs time.
- *           - added possibility to choose between lead free of leaded solder paste profiles.
- * 
- * Temperature (Degree Celcius)                 Magic Happens Here!
- * 245-|                                               x  x  
- *     |                                            x        x
- *     |                                         x              x
- *     |                                      x                    x
- * 200-|                                   x                          x
- *     |                              x    |                          |   x   
- *     |                         x         |                          |       x
- *     |                    x              |                          |
- * 150-|               x                   |                          |
- *     |             x |                   |                          |
- *     |           x   |                   |                          | 
- *     |         x     |                   |                          | 
- *     |       x       |                   |                          | 
- *     |     x         |                   |                          |
- *     |   x           |                   |                          |
- * 30 -| x             |                   |                          |
- *     |<  60 - 90 s  >|<    90 - 120 s   >|<       90 - 120 s       >|
- *     | Preheat Stage |   Soaking Stage   |       Reflow Stage       | Cool
- *  0  |_ _ _ _ _ _ _ _|_ _ _ _ _ _ _ _ _ _|_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
- *                                                                Time (Seconds)
- */
+   Revision  Description
+   ========  ===========
+   1.1       Arduino Nano v3 for GFE Hand Made Reflow Oven Controller board v1.1
+             - Compiled for Arduino Nano.
+             - Display changed to 16x2 Hitachi HD44780 Compatible.
+             - added data output to diplay temperature vs time.
+             - added possibility to choose between lead free of leaded solder paste profiles.
+
+   Temperature (Degree Celcius)                 Magic Happens Here!
+   245-|                                               x  x
+       |                                            x        x
+       |                                         x              x
+       |                                      x                    x
+   200-|                                   x                          x
+       |                              x    |                          |   x
+       |                         x         |                          |       x
+       |                    x              |                          |
+   150-|               x                   |                          |
+       |             x |                   |                          |
+       |           x   |                   |                          |
+       |         x     |                   |                          |
+       |       x       |                   |                          |
+       |     x         |                   |                          |
+       |   x           |                   |                          |
+   30 -| x             |                   |                          |
+       |<  60 - 90 s  >|<    90 - 120 s   >|<       90 - 120 s       >|
+       | Preheat Stage |   Soaking Stage   |       Reflow Stage       | Cool
+    0  |_ _ _ _ _ _ _ _|_ _ _ _ _ _ _ _ _ _|_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+                                                                  Time (Seconds)
+*/
 
 // ***** INCLUDES *****
 #include <SPI.h>
@@ -118,6 +118,7 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 #define ledRedPin          8
 #define buzzerPin          7
 #define switchPin          A0
+int data = 0;
 
 
 // ***** PID CONTROL VARIABLES *****
@@ -160,11 +161,11 @@ Adafruit_MAX31855 thermocouple(thermocoupleCLKPin, thermocoupleCSPin, thermocoup
 
 void setup()
 {
-  
+
   // SSR pin initialization to ensure reflow oven is off
   digitalWrite(ssrPin, LOW);
   pinMode(ssrPin, OUTPUT);
-   
+
   // Buzzer pin initialization to ensure annoying buzzer is off
   digitalWrite(buzzerPin, LOW);
   pinMode(buzzerPin, OUTPUT);
@@ -185,14 +186,23 @@ void setup()
   digitalWrite(buzzerPin, LOW);
   delay(3000);
   lcd.clear();
-  
-  profileSet();
 
   // Serial communication at 57600 bps
   Serial.begin(57600);
+  pinMode(13, OUTPUT);
+  digitalWrite(13, LOW);
 
   // Turn off LED (active low)
   digitalWrite(ledRedPin, LOW);
+
+  profileSet();
+
+  // Set window size
+  windowSize = 2000;
+  // Initialize time keeping variable
+  nextCheck = millis();
+  // Initialize thermocouple reading variable
+  nextRead = millis();
 }
 
 void loop() {
@@ -206,14 +216,14 @@ void loop() {
     nextRead += SENSOR_SAMPLING_TIME;
     // Read current temperature
     input = thermocouple.readCelsius();
-    
+
     // If thermocouple problem detected
-    if (isnan(input))    
+    if (isnan(input))
     {
       // Illegal operation
-      reflowState = REFLOW_STATE_ERROR;
-      reflowStatus = REFLOW_STATUS_OFF;
-    }    
+      //reflowState = REFLOW_STATE_ERROR;
+      //reflowStatus = REFLOW_STATUS_OFF;
+    }
   }
 
   if (millis() > nextCheck)
@@ -227,7 +237,7 @@ void loop() {
       digitalWrite(ledRedPin, !(digitalRead(ledRedPin)));
       // Increase seconds timer for reflow curve analysis
       timerSeconds++;
-      // Send temperature and time stamp to serial as csv standard 
+      // Send temperature and time stamp to serial as csv standard
       Serial.print(timerSeconds);
       Serial.print(",");
       Serial.print(setpoint);
@@ -244,19 +254,23 @@ void loop() {
 
     // Clear LCD
     lcd.clear();
-    lcd.setCursor(11,1);
-    if(reflowStatus == REFLOW_STATUS_ON)
+    lcd.setCursor(11, 1);
+    if (reflowStatus == REFLOW_STATUS_ON)
     {
       lcd.print(type);
       // Print Stop Button
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       lcd.print("stop");
-      }
+    }
     else
+    {
       lcd.print("start");
-    
+      lcd.setCursor(0, 1);
+      lcd.print("prSet");
+    }
+
     // Print current system state
-    lcd.setCursor(0,0);
+    lcd.setCursor(0, 0);
     lcd.print(lcdMessagesReflowStatus[reflowState]);
     // Move the cursor to the 2 line
     lcd.setCursor(9, 0);
@@ -271,34 +285,37 @@ void loop() {
     {
       // Print current temperature
       lcd.print(input);
-      
-      #if ARDUINO >= 100
-        // Print degree Celsius symbol
-  lcd.write((uint8_t)0);
-      #else
-  // Print degree Celsius symbol
-  lcd.print(0, BYTE);
-      #endif
+
+#if ARDUINO >= 100
+      // Print degree Celsius symbol
+      lcd.write((uint8_t)0);
+#else
+      // Print degree Celsius symbol
+      lcd.print(0, BYTE);
+#endif
       lcd.print("C ");
     }
   }
 
   // Reflow oven controller state machine
-    switch (reflowState)
-    {
-      case REFLOW_STATE_IDLE:
+  switch (reflowState)
+  {
+    case REFLOW_STATE_IDLE:
       // If oven temperature is still above room temperature
       if (input >= TEMPERATURE_ROOM)
       {
         reflowState = REFLOW_STATE_TOO_HOT;
       }
-      
+
       else
       {
         // If switch is pressed to start reflow process
-        if (analogRead(switchPin) < 30)
+        if (Serial.available() > 0) data = Serial.read();
+
+        if (analogRead(switchPin) < 30 || data == 10)
         {
-          if(endOfPrevProcess == true)
+          data = 0;
+          if (endOfPrevProcess == true)
             profileSet();
           else
           {
@@ -321,10 +338,10 @@ void loop() {
         }
       }
       break;
-  
-      case REFLOW_STATE_PREHEAT:
+
+    case REFLOW_STATE_PREHEAT:
       reflowStatus = REFLOW_STATUS_ON;
-      // If minimum soak temperature is achieve       
+      // If minimum soak temperature is achieve
       if (input >= TEMPERATURE_SOAK_MIN)
       {
         // Chop soaking period into smaller sub-period
@@ -332,15 +349,15 @@ void loop() {
         // Set less agressive PID parameters for soaking ramp
         reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
         // Ramp up to first section of soaking temperature
-        setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;   
+        setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;
         // Proceed to soaking state
-        reflowState = REFLOW_STATE_SOAK; 
+        reflowState = REFLOW_STATE_SOAK;
       }
-      
+
       break;
-  
-    case REFLOW_STATE_SOAK:     
-      // If micro soak temperature is achieved       
+
+    case REFLOW_STATE_SOAK:
+      // If micro soak temperature is achieved
       if (millis() > timerSoak)
       {
         timerSoak = millis() + SOAK_MICRO_PERIOD;
@@ -351,13 +368,13 @@ void loop() {
           // Set agressive PID parameters for reflow ramp
           reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
           // Ramp up to first section of soaking temperature
-          setpoint = TEMPERATURE_REFLOW_MAX;   
+          setpoint = TEMPERATURE_REFLOW_MAX;
           // Proceed to reflowing state
-          reflowState = REFLOW_STATE_REFLOW; 
+          reflowState = REFLOW_STATE_REFLOW;
         }
       }
-      break; 
-  
+      break;
+
     case REFLOW_STATE_REFLOW:
       // We need to avoid hovering at peak temperature for too long
       // Crude method that works like a charm and safe for the components
@@ -366,100 +383,112 @@ void loop() {
         // Set PID parameters for cooling ramp
         reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
         // Ramp down to minimum cooling temperature
-        setpoint = TEMPERATURE_COOL_MIN;   
+        setpoint = TEMPERATURE_COOL_MIN;
         // Proceed to cooling state
-        reflowState = REFLOW_STATE_COOL; 
-       }
-        
-      break;   
-  
+        reflowState = REFLOW_STATE_COOL;
+      }
+
+      break;
+
     case REFLOW_STATE_COOL:
-      // If minimum cool temperature is achieve       
+      // If minimum cool temperature is achieve
       if (input <= TEMPERATURE_COOL_MIN)
       {
         // Retrieve current time for buzzer usage
         buzzerPeriod = millis() + 1000;
         // Turn on buzzer and green LED to indicate completion
-        
+
         digitalWrite(buzzerPin, HIGH);
         // Turn off reflow process
-        reflowStatus = REFLOW_STATUS_OFF;                
+        reflowStatus = REFLOW_STATUS_OFF;
         // Proceed to reflow Completion state
         reflowState = REFLOW_STATE_COMPLETE;
         endOfPrevProcess = true;
-        Serial.print("eof"); 
-      }         
-      break;    
-  
+        Serial.print("eof");
+      }
+      break;
+
     case REFLOW_STATE_COMPLETE:
       if (millis() > buzzerPeriod)
       {
         // Turn off buzzer and green LED
         digitalWrite(buzzerPin, LOW);
         // Reflow process ended
-        reflowState = REFLOW_STATE_IDLE; 
+        reflowState = REFLOW_STATE_IDLE;
       }
       break;
-      
-      case REFLOW_STATE_TOO_HOT:
+
+    case REFLOW_STATE_TOO_HOT:
       // If oven temperature drops below room temperature
       if (input < TEMPERATURE_ROOM)
       {
         // Ready to reflow
-    reflowState = REFLOW_STATE_IDLE;
+        reflowState = REFLOW_STATE_IDLE;
       }
-      break; 
-      
+      break;
+
     case REFLOW_STATE_ERROR:
-    // If thermocouple problem is still present
-    
+      // If thermocouple problem is still present
+
       if (isnan(input))
       {
         // Wait until thermocouple wire is connected
-        reflowState = REFLOW_STATE_ERROR; 
+        reflowState = REFLOW_STATE_ERROR;
       }
       else
       {
         // Clear to perform reflow process
-        reflowState = REFLOW_STATE_IDLE; 
-      }
-      break;    
-    }    
-  
-    // If switch 1 is pressed
-    if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800)
-    {
-      // If currently reflow process is on going
-      if (reflowStatus == REFLOW_STATUS_ON)
-      {
-        // Button press is for cancelling
-        // Turn off reflow process
-        reflowStatus = REFLOW_STATUS_OFF;
-        // Reinitialize state machine
         reflowState = REFLOW_STATE_IDLE;
       }
-    } 
-     
-    // PID computation and SSR control
+      break;
+  }
+
+  // If switch 1 is pressed
+  if (Serial.available() > 0) data = Serial.read();
+  if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == 100)
+  {
+    data = 0;
+    // If currently reflow process is on going
     if (reflowStatus == REFLOW_STATUS_ON)
     {
-      now = millis();
-  
-      reflowOvenPID.Compute();
-  
-      if((now - windowStartTime) > windowSize)
-      { 
-        // Time to shift the Relay Window
-        windowStartTime += windowSize;
-      }
-      if(output > (now - windowStartTime))  digitalWrite(ssrPin, HIGH);
-      else                                  digitalWrite(ssrPin, LOW);
+      // Button press is for cancelling
+      // Turn off reflow process
+      reflowStatus = REFLOW_STATUS_OFF;
+      // Reinitialize state machine
+      reflowState = REFLOW_STATE_IDLE;
     }
-    // Reflow oven process is off, ensure oven is off
-    else 
+    else
+      profileSet();
+  }
+
+  // PID computation and SSR control
+  if (reflowStatus == REFLOW_STATUS_ON)
+  {
+    now = millis();
+
+    reflowOvenPID.Compute();
+
+    if ((now - windowStartTime) > windowSize)
+    {
+      // Time to shift the Relay Window
+      windowStartTime += windowSize;
+    }
+    if (output > (now - windowStartTime))
+    {
+      Serial.println("ssrPin, HIGH");
+      digitalWrite(ssrPin, HIGH);
+    }
+    else
     {
       digitalWrite(ssrPin, LOW);
-      lcd.setCursor(7,1);
-      lcd.print(" ");
+      Serial.println("ssrPin, LOW");
     }
+  }
+  // Reflow oven process is off, ensure oven is off
+  else
+  {
+    digitalWrite(ssrPin, LOW);
+    lcd.setCursor(7, 1);
+    lcd.print(" ");
+  }
 }
