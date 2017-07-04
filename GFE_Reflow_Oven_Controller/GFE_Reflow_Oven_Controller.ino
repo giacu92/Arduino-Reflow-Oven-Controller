@@ -142,7 +142,7 @@ reflowStatus_t reflowStatus;
 // Switch debounce timer
 long lastDebounceTime;
 // Seconds timer
-int timerSeconds;
+int timerSeconds = 0;
 
 bool endOfPrevProcess = false;
 
@@ -238,13 +238,13 @@ void loop() {
       // Increase seconds timer for reflow curve analysis
       timerSeconds++;
       // Send temperature and time stamp to serial as csv standard
-      Serial.print(timerSeconds);
-      Serial.print(",");
-      Serial.print(setpoint);
-      Serial.print(",");
-      Serial.print(input);
-      Serial.print(",");
-      Serial.println(output);
+      String dataToSend = "(" + (String)timerSeconds + "," + (String)setpoint + "," + (String)input + "," + (String)output + ")";
+      char* buf = (char*) malloc(sizeof(char)*dataToSend.length()+1);
+
+      dataToSend.toCharArray(buf, dataToSend.length()+1);
+      Serial.println(buf);
+      free(buf);
+    
     }
     else
     {
@@ -475,13 +475,13 @@ void loop() {
     }
     if (output > (now - windowStartTime))
     {
-      Serial.println("ssrPin, HIGH");
+      //Serial.println("ssrPin, HIGH");
       digitalWrite(ssrPin, HIGH);
     }
     else
     {
       digitalWrite(ssrPin, LOW);
-      Serial.println("ssrPin, LOW");
+      //Serial.println("ssrPin, LOW");
     }
   }
   // Reflow oven process is off, ensure oven is off

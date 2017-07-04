@@ -6,64 +6,72 @@ Serial myPort;
 
 int left_byte = 100;
 int right_byte = 10;
-boolean check = false;
+boolean connected = false;
 
 int startX = 60;
 int stopY  = 50;
-int stopX  = 740;
+int stopX  = 736;
 int startY = 370;
 int stepX = (stopX-50-startX)/12;
 int stepY = (startY-stopY-20)/6;
 
+int X, Y, oldX, oldY = 0;
+
 int   val1, val2 = 0;
 float val3, val4 = 0;
+
+Table table = new Table();
 
 public void setup()
 {
   size(800, 450, JAVA2D);
   createGUI();
-  customGUI();
 
   COM_list.setItems(Serial.list(), 0);
   labelX.setVisible(false);
   labelY.setVisible(false);
+  
+  table.addColumn("time", Table.INT);
+  table.addColumn("temperature", Table.FLOAT);
 }
 
 public void draw()
 {
   background(220);
+  aggiornaInterfaccia();
   
-
-  //if (COM_list.getText().substring(0, 19) == "/dev/cu.wchusbserial") check = true;
-  if (COM_list.getText().indexOf("/dev/cu.wchusbserial") > 0 )  check = true;
-  
-  if (check)
-  {
-    while (myPort.available() > 0)
-    {
-      String inByte = myPort.readString();
-      println(inByte);
-      
-      //val1 = Integer.parseInt(inByte.substring(0,1));
-      //val2 = Integer.parseInt(inByte.substring(1,2));
-      
-      textfield1.setText(inByte);
-      textfield1.appendText(inByte + " ");
-    }
-  }
-  
-  strokeWeight(0);
-  fill(0,220,0);
-  
-  val1 = (int)map(val1, 0, 360, startX, stopX);
-  val2 = (int)map(val2, 0, 260, stopY, startY);
-  line(startX, val2, stopX, val2);
-  
-  labelX.setText("x: " + str(val1)    + "s" );
-  labelY.setText("y: " + nf(val2,3,2) + "°C");
+  serialReceive();
 }
   
-
-public void customGUI()
+void serialReceive()
 {
+  try
+  {
+    if(myPort.available() > 0)
+    {
+      String[] parametri;
+      String riga = myPort.readString(); // mi aspetto "(timeStamp,setpoint,input,output)"
+      print(riga);
+      
+      int iniPac = riga.indexOf("(");
+      int endPac = riga.indexOf(")");
+      if(iniPac != -1 && endPac != -1)
+      {
+        riga = riga.substring(iniPac+1, endPac);
+        parametri = split(riga, ','); // (timeStamp[0],setpoint[1],input[2],output[3])
+        
+        //arrotondo i valori per piazzarli nel grafico e li aggiungo alla tabella
+        int new_time = round(map(Integer.valueOf(parametri[0]), 0, 30, 0, stepX));
+        float new_temp = round(map(Float.valueOf(parametri[2]), 0, 25, 0, stepY));
+        
+        table.addRow();
+        int n = table.getRowCount();
+        table.setInt(n-1, "time", new_time+startX+10);
+        table.setFloat(n-1, "temperature", startY-new_temp);
+        
+        labelSerialReceive.setText("got: " + riga);
+      }
+    }
+  }
+  catch (Exception e) {println("exception");}
 }
