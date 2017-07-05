@@ -18,15 +18,18 @@ The momentary switches must be connected as shown:
 
 In this way A0 can be used to detect which button is pressed.
 
-I previously built a breadboard version and now finally developed a board. Can't wait them to arrive! they're on fab right now..
+I previously built a breadboard version and now finally developed a board. I got some spare boards in case you're looking for one of this.
 ![Board](http://i68.tinypic.com/24o6quf.jpg)
 
 The board and all the electronics will be put inside a 3D printed box. This how it will looks like..
 ![Box](http://i63.tinypic.com/ae1bwy.jpg)
 
 # PROCESSING Serial Controller
-I finally tested my serial controller written in Processing. The GUI for now contains the essential. It plot the temperature-vs-time graph respect to a standard profile. Now time to tune PID to match thermal capabilities of my oven.
+By connecting the Arduino Nano USB cable to the PC (currently i'm working with Raspberry Pi as serial controller) you'll be able to control the microcontroller and get rid of the pushbutton interface and display (or use them both together). So I wrote a Serial Controller Interface in Processing which allows me to read and send data back and forth the microcontroller.
+The GUI for now contains the essential. It plot the temperature-vs-time graph respect to a standard profile. Now time to tune PID to match thermal capabilities of my oven.
 ![GUI](http://i65.tinypic.com/2wqy1bp.png)
-UPDATE: The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
 
-This project is under continuous updating (July 2017). Contact me for anything :)
+### UPDATE:
+The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
+
+This project is under continuous update (July 2017). Contact me for anything :)
