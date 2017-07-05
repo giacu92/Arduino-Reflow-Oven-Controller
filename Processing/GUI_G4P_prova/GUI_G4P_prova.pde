@@ -60,9 +60,12 @@ void serialReceive()
         riga = riga.substring(iniPac+1, endPac);
         parametri = split(riga, ','); // (timeStamp[0],setpoint[1],input[2],output[3])
         
+        labelX.setText(parametri[0] + " s" );
+        labelY.setText(parametri[2] + " °C");
+        
         //arrotondo i valori per piazzarli nel grafico e li aggiungo alla tabella
         int new_time = round(map(Integer.valueOf(parametri[0]), 0, 30, 0, stepX));
-        float new_temp = round(map(Float.valueOf(parametri[2]), 0, 25, 0, stepY));
+        float new_temp = round(map(Float.valueOf(parametri[2]), 0, 50, 0, stepY));
         
         table.addRow();
         int n = table.getRowCount();

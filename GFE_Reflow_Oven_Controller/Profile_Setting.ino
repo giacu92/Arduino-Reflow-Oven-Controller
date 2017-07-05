@@ -27,6 +27,9 @@ void profileSet()
 
   if (val < 30 || data == 10) //right button pressed => LEADED_PROFILE
   {
+    /*TEMPERATURE_SOAK_MIN = 150;
+    TEMPERATURE_SOAK_MAX = 177;
+    TEMPERATURE_REFLOW_MAX = 230;*/
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 177;
     TEMPERATURE_REFLOW_MAX = 230;

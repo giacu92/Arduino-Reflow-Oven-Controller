@@ -163,8 +163,8 @@ void setup()
 {
 
   // SSR pin initialization to ensure reflow oven is off
-  digitalWrite(ssrPin, LOW);
   pinMode(ssrPin, OUTPUT);
+  digitalWrite(ssrPin, LOW);
 
   // Buzzer pin initialization to ensure annoying buzzer is off
   digitalWrite(buzzerPin, LOW);
@@ -184,7 +184,7 @@ void setup()
   lcd.print("Reflow Oven 1.1");
 
   digitalWrite(buzzerPin, LOW);
-  delay(3000);
+  delay(2000);
   lcd.clear();
 
   // Serial communication at 57600 bps
@@ -221,8 +221,8 @@ void loop() {
     if (isnan(input))
     {
       // Illegal operation
-      //reflowState = REFLOW_STATE_ERROR;
-      //reflowStatus = REFLOW_STATUS_OFF;
+      reflowState = REFLOW_STATE_ERROR;
+      reflowStatus = REFLOW_STATUS_OFF;
     }
   }
 
@@ -237,14 +237,16 @@ void loop() {
       digitalWrite(ledRedPin, !(digitalRead(ledRedPin)));
       // Increase seconds timer for reflow curve analysis
       timerSeconds++;
+      
       // Send temperature and time stamp to serial as csv standard
       String dataToSend = "(" + (String)timerSeconds + "," + (String)setpoint + "," + (String)input + "," + (String)output + ")";
       char* buf = (char*) malloc(sizeof(char)*dataToSend.length()+1);
 
       dataToSend.toCharArray(buf, dataToSend.length()+1);
       Serial.println(buf);
+
+      // Freeing the memory;
       free(buf);
-    
     }
     else
     {
@@ -353,7 +355,6 @@ void loop() {
         // Proceed to soaking state
         reflowState = REFLOW_STATE_SOAK;
       }
-
       break;
 
     case REFLOW_STATE_SOAK:
