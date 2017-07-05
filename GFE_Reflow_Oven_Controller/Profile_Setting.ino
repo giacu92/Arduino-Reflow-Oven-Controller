@@ -27,13 +27,10 @@ void profileSet()
 
   if (val < 30 || data == 10) //right button pressed => LEADED_PROFILE
   {
-    /*TEMPERATURE_SOAK_MIN = 150;
-    TEMPERATURE_SOAK_MAX = 177;
-    TEMPERATURE_REFLOW_MAX = 230;*/
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 177;
     TEMPERATURE_REFLOW_MAX = 230;
-    type = "  (L)";
+    type = "  [L]";
   }
     
   else if (val >= 30 || data == 100)
@@ -41,8 +38,23 @@ void profileSet()
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 200;
     TEMPERATURE_REFLOW_MAX = 250;
-    type = " (LF)";
+    type = " [LF]";
   }
+
+  //Mando i parametri per la stampa del grafico
+  String dataToSend =
+    "(" + type + ","
+        + TEMPERATURE_SOAK_MIN   + ","
+        + TEMPERATURE_SOAK_MAX   + ","
+        + TEMPERATURE_REFLOW_MAX + ")";
+        
+  char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
+
+  dataToSend.toCharArray(buf, dataToSend.length()+1);
+  Serial.println(buf);
+
+  // Freeing the memory;
+  free(buf);
 
   data = 0;
   delay(1000);

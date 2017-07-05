@@ -205,7 +205,8 @@ void setup()
   nextRead = millis();
 }
 
-void loop() {
+void loop()
+{ 
   // Current time
   unsigned long now;
 
@@ -312,7 +313,38 @@ void loop() {
       else
       {
         // If switch is pressed to start reflow process
-        if (Serial.available() > 0) data = Serial.read();
+        if (Serial.available() > 0)
+        {
+          //Leggo la stringa in arrivo dalla seriale.
+          String receivedString = Serial.readString();
+
+          int iniPac = receivedString.indexOf('(');
+          int endPac = receivedString.indexOf(')');
+
+          //se ci sono i caratteri di inizio e fine pacchetto è un messaggio,
+          //altrimenti ho ricevuto solo un dato da inserire in data.
+          if (iniPac != -1 && endPac != -1 && endPac - iniPac > 1)
+          {
+            String packetIn = receivedString;
+            packetIn = packetIn.substring(iniPac+1, endPac-1); //tolgo le parentesi
+
+            int valoriIn[3] = -100;
+            for (int i=0; packetIn.indexOf(',') != -1; i++)
+            {
+              int index = packetIn.indexOf(',');
+              valoriIn[i] = packetIn.substring(0, index).toInt();
+              packetIn = packetIn.substring(index+1, packetIn.length());
+
+              Serial.println(packetIn[i]); //DI DEBUG
+            }
+
+            TEMPERATURE_SOAK_MIN =    valoriIn[0];
+            TEMPERATURE_SOAK_MAX =    valoriIn[1];
+            TEMPERATURE_REFLOW_MAX =  valoriIn[2];
+          }
+
+          else  data = receivedString.toInt();
+        }
 
         if (analogRead(switchPin) < 30 || data == 10)
         {
