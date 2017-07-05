@@ -5,8 +5,8 @@ This repo contains all the files of my Arduino Nano based Reflow Oven PID Contro
 * email: giacomo.mammarella@student.univaq.it
 
 # File list:
-* [GFE_Reflow_Oven.ino](https://github.com/giacu92/GFE-Reflow-Oven-Controller/blob/master/GFE_Reflow_Oven.ino): is the hex file precompiled for my Arduino Nano controller Board.
-* [Profile_Setting.ino](https://github.com/giacu92/GFE-Reflow-Oven-Controller/blob/master/Profile_Setting.ino): this file contains a function to choose between Lead-Free or Leaded solder paste.
+* [Arduino files](https://github.com/giacu92/Reflow-Oven-Controller/tree/master/GFE_Reflow_Oven_Controller): The Arduino files source folder.
+* [Processing file](https://github.com/giacu92/Reflow-Oven-Controller/tree/master/Processing/Reflow_oven_serial_controller): The Processing files source folder.
 * [Prova.brd](https://github.com/giacu92/GFE-Reflow-Oven-Controller/blob/master/Prova.brd): Cadsoft Eagle 6.5 .brd file of my Reflow Oven Controller. 
 * [Prova.sch](https://github.com/giacu92/GFE-Reflow-Oven-Controller/blob/master/Prova.sch): Cadsoft Eagle 6.5 .sch file of my Reflow Oven Controller.
 
