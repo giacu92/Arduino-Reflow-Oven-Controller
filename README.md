@@ -24,9 +24,8 @@ I previously built a breadboard version and now finally developed a board. Can't
 The board and all the electronics will be put inside a 3D printed box. This how it will looks like..
 ![Box](http://i63.tinypic.com/ae1bwy.jpg)
 
-UPDATE 02/29/2016 --
-I'm currently writing a serial controller for the reflow oven in Processing.
-It will help me plotting the data graph received from the thermocouple to perform trimming of the PID controller and will show the temperature plot vs time. You need to install the G4P library in Processing.
+# Testing the Processing serial controller:
+I finally tested my serial controller written in Processing. The GUI for now contains the essential. It plot the temperature vs time graph respect to a standard profile. Now time to tune PID to match thermal capabilities of my oven.
+![GUI](http://i65.tinypic.com/2wqy1bp.png)
 
-
-This project is under continuous updating (Mar 2016). Contact me for anything :)
+This project is under continuous updating (July 2017). Contact me for anything :)
