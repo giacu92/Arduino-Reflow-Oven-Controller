@@ -2,16 +2,19 @@
 // l'impostazione dei parametri
 public void buttonSetTemp_click(GButton source, GEvent event)
 {
-  TEMPERATURE_SOAK_MIN   = Integer.valueOf(tf_TEMP_SOAK_MIN.getText());
-  TEMPERATURE_SOAK_MAX   = Integer.valueOf(tf_TEMP_SOAK_MAX.getText());
-  TEMPERATURE_REFLOW_MAX = Integer.valueOf(tf_TEMP_REFL_MAX.getText());
-  TEMPERATURE_COOLDOWN   = Integer.valueOf(tf_TEMP_COOL.getText());
+  //leggo dalle textfield
+  int t_soak_min   = Integer.valueOf(tf_TEMP_SOAK_MIN.getText());
+  int t_soak_max   = Integer.valueOf(tf_TEMP_SOAK_MAX.getText());
+  int t_refl_max = Integer.valueOf(tf_TEMP_REFL_MAX.getText());
+  int t_cooldown   = Integer.valueOf(tf_TEMP_COOL.getText());
 
-  String dataToSend = "(" + TEMPERATURE_SOAK_MIN   + ","
-                          + TEMPERATURE_SOAK_MAX   + ","
-                          + TEMPERATURE_REFLOW_MAX + ","
-                          + TEMPERATURE_COOLDOWN   + ")";
-                          
+  //scrivo tutto sulla stringa da mandare
+  String dataToSend = "(" + t_soak_min   + ","
+                          + t_soak_max   + ","
+                          + t_refl_max   + ","
+                          + t_cooldown   + ")";
+  
+  //converto tutto in array di byte e provo a mandare sulla seriale
   byte[] dataBytes = dataToSend.getBytes();
   if (connected)
   {
@@ -46,9 +49,6 @@ public void buttonClear_click(GButton source, GEvent event)
   tf_TEMP_SOAK_MAX.setText(Integer.toString(TEMPERATURE_SOAK_MAX));
   tf_TEMP_REFL_MAX.setText(Integer.toString(TEMPERATURE_REFLOW_MAX));
   tf_TEMP_COOL.setText(Integer.toString(TEMPERATURE_COOLDOWN));
-  
-  //Reimposto la lista di porte seriali disponibili
-  COM_list.setItems(Serial.list(), 0);
 }
 
 public void buttonStop_click(GButton source, GEvent event)

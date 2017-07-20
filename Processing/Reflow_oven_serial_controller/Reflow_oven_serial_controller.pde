@@ -18,9 +18,9 @@ int stepY  = (startY-stopY-20)/6 ;
 
 int X, Y, oldX, oldY = 0;
 
-int TEMPERATURE_SOAK_MIN   = 140;
-int TEMPERATURE_SOAK_MAX   = 177;
-int TEMPERATURE_REFLOW_MAX = 230;
+int TEMPERATURE_SOAK_MIN   = 100;
+int TEMPERATURE_SOAK_MAX   = 120;
+int TEMPERATURE_REFLOW_MAX = 130;
 int TEMPERATURE_COOLDOWN   = 100;
 
 Table table = new Table();
@@ -29,6 +29,7 @@ boolean connected = false;
 public void setup()
 {
   size(800, 450, JAVA2D);
+  frameRate(10);
   createGUI();
 
   COM_list.setItems(Serial.list(), 0);
@@ -66,12 +67,25 @@ void serialReceive()
         riga = riga.substring(iniPac+1, endPac);
         parametri = split(riga, ','); // (timeStamp[0],setpoint[1],input[2],output[3])
         
+        println("parametri[0] = " + parametri[0]); //<>//
+        println("parametri[1] = " + parametri[1]);
+        println("parametri[2] = " + parametri[2]);
+        println("parametri[3] = " + parametri[3]);
+        
         //Se ho ricevuto "  [L]" o "  [LF]" vado solo a modificare le temperature 
-        if (parametri[0].equals("  [L]") || parametri[0].equals("  [LF]"))
+        if (parametri[0].equals(" [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
         {
           TEMPERATURE_SOAK_MIN   = Integer.valueOf(parametri[1]);
           TEMPERATURE_SOAK_MAX   = Integer.valueOf(parametri[2]);
           TEMPERATURE_REFLOW_MAX = Integer.valueOf(parametri[3]);
+          
+          tf_TEMP_SOAK_MIN.setText(Integer.toString(TEMPERATURE_SOAK_MIN));
+          tf_TEMP_SOAK_MAX.setText(Integer.toString(TEMPERATURE_SOAK_MAX));
+          tf_TEMP_REFL_MAX.setText(Integer.toString(TEMPERATURE_REFLOW_MAX));
+          
+          println("temperature_soak_min:" + TEMPERATURE_SOAK_MIN);
+          println("temperature_soak_max:" + TEMPERATURE_SOAK_MAX);
+          println("temperature_reflow_max:" + TEMPERATURE_REFLOW_MAX);
         }
         else //ho ricevuto i valori da plottare
         {

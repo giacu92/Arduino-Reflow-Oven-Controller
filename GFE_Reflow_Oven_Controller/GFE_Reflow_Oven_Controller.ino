@@ -195,7 +195,7 @@ void setup()
   // Turn off LED (active low)
   digitalWrite(ledRedPin, LOW);
 
-  profileSet();
+  //profileSet();
 
   // Set window size
   windowSize = 2000;
@@ -316,7 +316,9 @@ void loop()
         if (Serial.available() > 0)
         {
           //Leggo la stringa in arrivo dalla seriale.
-          String receivedString = Serial.readString();
+          char dataIn[100] = {""};
+          Serial.readBytes(dataIn, 100);
+          String receivedString(dataIn);
 
           int iniPac = receivedString.indexOf('(');
           int endPac = receivedString.indexOf(')');
@@ -326,31 +328,48 @@ void loop()
           if (iniPac != -1 && endPac != -1 && endPac - iniPac > 1)
           {
             String packetIn = receivedString;
-            packetIn = packetIn.substring(iniPac+1, endPac-1); //tolgo le parentesi
+            packetIn = packetIn.substring(iniPac+1, endPac); //tolgo le parentesi
 
-            int valoriIn[3] = -100;
+            int valoriIn[3] = {-100};
             for (int i=0; packetIn.indexOf(',') != -1; i++)
             {
               int index = packetIn.indexOf(',');
               valoriIn[i] = packetIn.substring(0, index).toInt();
               packetIn = packetIn.substring(index+1, packetIn.length());
-
-              Serial.println(packetIn[i]); //DI DEBUG
             }
 
             TEMPERATURE_SOAK_MIN =    valoriIn[0];
             TEMPERATURE_SOAK_MAX =    valoriIn[1];
             TEMPERATURE_REFLOW_MAX =  valoriIn[2];
+
+            type = " [C]";
+            String dataToSend =
+            "(" + type + ","
+                + TEMPERATURE_SOAK_MIN   + ","
+                + TEMPERATURE_SOAK_MAX   + ","
+                + TEMPERATURE_REFLOW_MAX + ")";
+        
+            char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
+
+            dataToSend.toCharArray(buf, dataToSend.length()+1);
+            Serial.println(buf);
+
+            // Freeing the memory;
+            free(buf);
           }
 
-          else  data = receivedString.toInt();
+          else
+          {
+            data = dataIn[0];
+            Serial.println("dataIn[0] = " + data);
+          }
         }
 
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
-          if (endOfPrevProcess == true)
-            profileSet();
+          if (endOfPrevProcess == true);
+            //profileSet();
           else
           {
             // Send header for CSV file
@@ -491,7 +510,7 @@ void loop()
       reflowState = REFLOW_STATE_IDLE;
     }
     else
-      profileSet();
+      ;//profileSet();
   }
 
   // PID computation and SSR control
