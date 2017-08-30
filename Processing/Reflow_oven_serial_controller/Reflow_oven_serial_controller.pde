@@ -18,9 +18,9 @@ int stepY  = (startY-stopY-20)/6 ;
 
 int X, Y, oldX, oldY = 0;
 
-int TEMPERATURE_SOAK_MIN   = 100;
-int TEMPERATURE_SOAK_MAX   = 120;
-int TEMPERATURE_REFLOW_MAX = 130;
+int TEMPERATURE_SOAK_MIN   = 150;
+int TEMPERATURE_SOAK_MAX   = 177;
+int TEMPERATURE_REFLOW_MAX = 230;
 int TEMPERATURE_COOLDOWN   = 100;
 
 Table table = new Table();
