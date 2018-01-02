@@ -29,7 +29,7 @@ void profileSet()
   {
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 177;
-    TEMPERATURE_REFLOW_MAX = 230;
+    TEMPERATURE_REFLOW_MAX = 210;
     type = "  [L]";
   }
     
@@ -41,21 +41,51 @@ void profileSet()
     type = " [LF]";
   }
 
-  //Mando i parametri per la stampa del grafico
+  data = 0;
+  delay(1000);
+  
+  sendProfile();
+}
+
+void sendProfile()
+{
   String dataToSend =
     "(" + type + ","
         + TEMPERATURE_SOAK_MIN   + ","
         + TEMPERATURE_SOAK_MAX   + ","
         + TEMPERATURE_REFLOW_MAX + ")";
-        
+  
   char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
-
   dataToSend.toCharArray(buf, dataToSend.length()+1);
   Serial.println(buf);
-
-  // Freeing the memory;
   free(buf);
 
-  data = 0;
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("T Preheat=");
+  lcd.setCursor(11, 0);
+  lcd.print(TEMPERATURE_SOAK_MIN);
+  lcd.write((uint8_t)0);
+  lcd.print("C");
+  lcd.setCursor(0,1);
+  lcd.print("T Soak=");
+  lcd.setCursor(11, 1);
+  lcd.print(TEMPERATURE_SOAK_MAX);
+  lcd.write((uint8_t)0);
+  lcd.print("C");
+  delay(1000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("T Refl=");
+  lcd.setCursor(11, 0);
+  lcd.print(TEMPERATURE_REFLOW_MAX);
+  lcd.write((uint8_t)0);
+  lcd.print("C");
+  lcd.setCursor(0,1);
+  lcd.print("T Cool=");
+  lcd.setCursor(11, 1);
+  lcd.print(TEMPERATURE_COOL_MIN);
+  lcd.write((uint8_t)0);
+  lcd.print("C");
   delay(1000);
 }

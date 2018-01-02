@@ -1,4 +1,3 @@
-
 /*
    Revision  Description
    ========  ===========
@@ -37,6 +36,7 @@
 #include <Adafruit_MAX31855.h>
 #include <PID_v1.h>
 
+//#define USE_LCD_KEYPAD_SHIELD
 
 // ***** CONSTANTS *****
 #define TEMPERATURE_ROOM 50
@@ -105,19 +105,35 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 
 // ***** PIN ASSIGNMENT *****
-#define ssrPin             6
-#define thermocoupleSOPin  5
-#define thermocoupleCSPin  4
-#define thermocoupleCLKPin 3
-#define lcdRsPin           9
-#define lcdEPin            10
-#define lcdD4Pin           A5
-#define lcdD5Pin           A4
-#define lcdD6Pin           A3
-#define lcdD7Pin           A2
-#define ledRedPin          8
-#define buzzerPin          7
-#define switchPin          A0
+#ifdef USE_LCD_KEYPAD_SHIELD
+  #define ssrPin             1//6
+  #define thermocoupleSOPin  1//5
+  #define thermocoupleCSPin  1//4
+  #define thermocoupleCLKPin 1//3
+  #define lcdRsPin           8//9
+  #define lcdEPin            9//10
+  #define lcdD4Pin           4//A5
+  #define lcdD5Pin           5//A4
+  #define lcdD6Pin           6//A3
+  #define lcdD7Pin           7//A2
+  #define ledRedPin          1//8
+  #define buzzerPin          1//7
+  #define switchPin          A0
+#else
+  #define ssrPin             6
+  #define thermocoupleSOPin  5
+  #define thermocoupleCSPin  4
+  #define thermocoupleCLKPin 3
+  #define lcdRsPin           9
+  #define lcdEPin            10
+  #define lcdD4Pin           A5
+  #define lcdD5Pin           A4
+  #define lcdD6Pin           A3
+  #define lcdD7Pin           A2
+  #define ledRedPin          8
+  #define buzzerPin          7
+  #define switchPin          A0
+#endif
 int data = 0;
 
 
@@ -206,7 +222,7 @@ void setup()
 }
 
 void loop()
-{ 
+{
   // Current time
   unsigned long now;
 
@@ -343,35 +359,27 @@ void loop()
             TEMPERATURE_REFLOW_MAX =  valoriIn[2];
 
             type = " [C]";
-            String dataToSend =
-            "(" + type + ","
-                + TEMPERATURE_SOAK_MIN   + ","
-                + TEMPERATURE_SOAK_MAX   + ","
-                + TEMPERATURE_REFLOW_MAX + ")";
-        
-            char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
-
-            dataToSend.toCharArray(buf, dataToSend.length()+1);
-            Serial.println(buf);
-
-            // Freeing the memory;
-            free(buf);
+            sendProfile();
           }
 
           else
           {
             data = dataIn[0];
-            Serial.println("dataIn[0] = " + data);
+            //Serial.println("dataIn[0] = " + data);
           }
         }
-
+        
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
-          if (endOfPrevProcess == true);
+          if (endOfPrevProcess == true) {}
             //profileSet();
           else
           {
+            // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
+            sendProfile();
+
+            // Ora mando l'header
             // Send header for CSV file
             Serial.println("Time Setpoint Input Output");
             // Intialize seconds timer for serial debug information
@@ -400,7 +408,7 @@ void loop()
         // Chop soaking period into smaller sub-period
         timerSoak = millis() + SOAK_MICRO_PERIOD;
         // Set less agressive PID parameters for soaking ramp
-        reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
+        reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
         // Ramp up to first section of soaking temperature
         setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;
         // Proceed to soaking state
@@ -418,7 +426,7 @@ void loop()
         if (setpoint > TEMPERATURE_SOAK_MAX)
         {
           // Set agressive PID parameters for reflow ramp
-          reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
+          reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
           // Ramp up to first section of soaking temperature
           setpoint = TEMPERATURE_REFLOW_MAX;
           // Proceed to reflowing state
@@ -510,7 +518,14 @@ void loop()
       reflowState = REFLOW_STATE_IDLE;
     }
     else
-      ;//profileSet();
+      profileSet();
+  }
+  else if (data == 999)
+  {
+    // Turn off reflow process
+    reflowStatus = REFLOW_STATUS_OFF;
+    // Reinitialize state machine
+    reflowState = REFLOW_STATE_IDLE;
   }
 
   // PID computation and SSR control
