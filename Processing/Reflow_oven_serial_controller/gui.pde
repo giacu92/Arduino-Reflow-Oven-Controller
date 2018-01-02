@@ -40,10 +40,10 @@ public void buttonClear_click(GButton source, GEvent event)
   labelSerialReceive.setText(" ");
   
   //Reimposto il grafico:
-  TEMPERATURE_SOAK_MIN   = 140;
+  /*TEMPERATURE_SOAK_MIN   = 140;
   TEMPERATURE_SOAK_MAX   = 177;
   TEMPERATURE_REFLOW_MAX = 230;
-  TEMPERATURE_COOLDOWN   = 100;
+  TEMPERATURE_COOLDOWN   = 100;*/
   
   tf_TEMP_SOAK_MIN.setText(Integer.toString(TEMPERATURE_SOAK_MIN));
   tf_TEMP_SOAK_MAX.setText(Integer.toString(TEMPERATURE_SOAK_MAX));
@@ -53,7 +53,7 @@ public void buttonClear_click(GButton source, GEvent event)
 
 public void buttonStop_click(GButton source, GEvent event)
 {
-  myPort.write(999);
+  myPort.write(stop_byte);
 }
 
 public void buttonConnect_click(GButton source, GEvent event)
@@ -141,15 +141,15 @@ public void createGUI()
   button_setTemp.addEventHandler(this, "buttonSetTemp_click");
   
   button_left = new GButton(this, 60, 390, 80, 50);
-  button_left.setText("left");
+  button_left.setText("LEFT");
   button_left.addEventHandler(this, "buttonLeft_click");
   
   button_right = new GButton(this, 260, 390, 80, 50);
-  button_right.setText("right");
+  button_right.setText("RIGHT");
   button_right.addEventHandler(this, "buttonRight_click");
   
   button_clear = new GButton(this, 460, 390, 80, 50);
-  button_clear.setText("clear");
+  button_clear.setText("CLEAR");
   button_clear.addEventHandler(this, "buttonClear_click");
   
   button_stop = new GButton(this, 660, 390, 80, 50);

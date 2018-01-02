@@ -8,6 +8,7 @@ Serial myPort;
 
 int left_byte = 100;
 int right_byte = 10;
+int stop_byte  = 999;
 
 int startX = 60;
 int stopY  = 50;
@@ -73,7 +74,7 @@ void serialReceive()
         println("parametri[3] = " + parametri[3]);
         
         //Se ho ricevuto "  [L]" o "  [LF]" vado solo a modificare le temperature 
-        if (parametri[0].equals(" [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
+        if (parametri[0].equals("  [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
         {
           TEMPERATURE_SOAK_MIN   = Integer.valueOf(parametri[1]);
           TEMPERATURE_SOAK_MAX   = Integer.valueOf(parametri[2]);
