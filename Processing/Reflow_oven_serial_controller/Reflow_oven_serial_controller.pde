@@ -30,7 +30,7 @@ boolean connected = false;
 public void setup()
 {
   size(800, 450, JAVA2D);
-  frameRate(10);
+  frameRate(4);
   createGUI();
 
   COM_list.setItems(Serial.list(), 0);
