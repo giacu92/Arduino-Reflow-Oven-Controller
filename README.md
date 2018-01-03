@@ -32,4 +32,4 @@ The GUI for now contains the essential. It plot the temperature-vs-time graph re
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
 
-This project is under continuous update (July 2017). Contact me for anything :)
+This project is under continuous update (Jan 2018). Contact me for anything :)
