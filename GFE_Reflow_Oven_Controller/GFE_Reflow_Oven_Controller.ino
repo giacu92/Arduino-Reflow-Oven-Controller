@@ -33,7 +33,7 @@
 // ***** INCLUDES *****
 #include <SPI.h>
 #include <LiquidCrystal.h>
-#include <Adafruit_MAX31855.h>
+#include "Adafruit_MAX31855.h"
 #include <PID_v1.h>
 
 //#define USE_LCD_KEYPAD_SHIELD
@@ -64,6 +64,21 @@
 
 // Sample time:
 #define PID_SAMPLE_TIME 1000
+
+// Notes:
+#define  note_c     261 //Hz
+#define  note_cd    277 //Hz
+#define  note_d     294 //Hz
+#define  note_e     330 //Hz
+#define  note_f     349 //Hz
+#define  note_fg    370 //Hz
+#define  note_g     392 //Hz
+#define  note_ga    415 //Hz
+#define  note_a     440 //Hz
+#define  note_ab    466 //Hz
+#define  note_b     494 //Hz
+#define  note_C     523 //Hz
+#define  note_d2  note_d*2
 
 // ***** TYPE DEFINITIONS *****
 typedef enum REFLOW_STATE
@@ -191,17 +206,12 @@ void setup()
   digitalWrite(ledRedPin, HIGH);
 
   // Start-up splash
-  digitalWrite(buzzerPin, HIGH);
   lcd.begin(16, 2);
   lcd.createChar(0, degree);
   lcd.clear();
   lcd.print("GFE Hand Made");
   lcd.setCursor(0, 1);
   lcd.print("Reflow Oven 1.1");
-
-  digitalWrite(buzzerPin, LOW);
-  delay(2000);
-  lcd.clear();
 
   // Serial communication at 57600 bps
   Serial.begin(57600);
@@ -212,6 +222,8 @@ void setup()
   digitalWrite(ledRedPin, LOW);
 
   //profileSet();
+  soundStart();
+  lcd.clear();
 
   // Set window size
   windowSize = 2000;
@@ -454,11 +466,6 @@ void loop()
       // If minimum cool temperature is achieve
       if (input <= TEMPERATURE_COOL_MIN)
       {
-        // Retrieve current time for buzzer usage
-        buzzerPeriod = millis() + 1000;
-        // Turn on buzzer and green LED to indicate completion
-
-        digitalWrite(buzzerPin, HIGH);
         // Turn off reflow process
         reflowStatus = REFLOW_STATUS_OFF;
         // Proceed to reflow Completion state
@@ -469,14 +476,11 @@ void loop()
       break;
 
     case REFLOW_STATE_COMPLETE:
-      if (millis() > buzzerPeriod)
-      {
-        // Turn off buzzer and green LED
-        digitalWrite(buzzerPin, LOW);
-        // Reflow process ended
-        reflowState = REFLOW_STATE_IDLE;
-      }
-      break;
+      // Turn on buzzer and green LED to indicate completion
+        soundComplete();
+      // Reflow process ended
+      reflowState = REFLOW_STATE_IDLE;
+    break;
 
     case REFLOW_STATE_TOO_HOT:
       // If oven temperature drops below room temperature

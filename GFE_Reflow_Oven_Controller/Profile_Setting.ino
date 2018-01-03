@@ -89,3 +89,104 @@ void sendProfile()
   lcd.print("C");
   delay(1000);
 }
+
+void soundStart()
+{
+  /*
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_cb);
+  delay(400);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_ga);
+  delay(100);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_cb);
+  delay(400);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_ga);
+  delay(100);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_f);
+  delay(800);
+  noTone(buzzerPin);
+  delay(100);
+  */
+  tone(buzzerPin, note_g);
+  delay(400);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_b);
+  delay(200);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_d2);
+  delay(200);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_g);
+  delay(400);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_b);
+  delay(200);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_d2);
+  delay(200);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_g);
+  delay(1000);
+  noTone(buzzerPin);
+}
+
+void soundComplete()
+{
+  tone(buzzerPin, note_cd);
+  delay(300);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_cd);
+  delay(100);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_ga);
+  delay(900);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_ab);
+  delay(120);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_ga);
+  delay(120);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_fg);
+  delay(120);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_ga);
+  delay(800);
+  noTone(buzzerPin);
+}
+
