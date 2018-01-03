@@ -92,44 +92,6 @@ void sendProfile()
 
 void soundStart()
 {
-  /*
-  tone(buzzerPin, note_f);
-  delay(500);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_f);
-  delay(500);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_f);
-  delay(500);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_cb);
-  delay(400);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_ga);
-  delay(100);
-  noTone(buzzerPin);
-  delay(50);
-  tone(buzzerPin, note_f);
-  delay(500);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_cb);
-  delay(400);
-  noTone(buzzerPin);
-  delay(100);
-  tone(buzzerPin, note_ga);
-  delay(100);
-  noTone(buzzerPin);
-  delay(50);
-  tone(buzzerPin, note_f);
-  delay(800);
-  noTone(buzzerPin);
-  delay(100);
-  */
   tone(buzzerPin, note_g);
   delay(400);
   noTone(buzzerPin);
@@ -188,5 +150,45 @@ void soundComplete()
   tone(buzzerPin, note_ga);
   delay(800);
   noTone(buzzerPin);
+}
+
+void soundError()
+{
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_cd);
+  delay(400);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_ga);
+  delay(100);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_f);
+  delay(500);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_cd);
+  delay(400);
+  noTone(buzzerPin);
+  delay(100);
+  tone(buzzerPin, note_ga);
+  delay(100);
+  noTone(buzzerPin);
+  delay(50);
+  tone(buzzerPin, note_f);
+  delay(800);
+  noTone(buzzerPin);
+  delay(100);
 }
 

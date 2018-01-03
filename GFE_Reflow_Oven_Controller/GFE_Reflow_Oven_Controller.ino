@@ -173,7 +173,9 @@ reflowStatus_t reflowStatus;
 // Switch debounce timer
 long lastDebounceTime;
 // Seconds timer
-int timerSeconds = 0;
+long timerSeconds = 0;
+long timeToCheck  = 0;
+int checkTemperature = 0;
 
 bool endOfPrevProcess = false;
 
@@ -292,6 +294,9 @@ void loop()
       // Print Stop Button
       lcd.setCursor(0, 1);
       lcd.print("stop");
+      lcd.setCursor(6,1);
+      lcd.print(timerSeconds);
+      lcd.print(" s");
     }
     else
     {
@@ -384,30 +389,25 @@ void loop()
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
-          if (endOfPrevProcess == true) {}
-            //profileSet();
-          else
-          {
-            // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
-            sendProfile();
+          checkTemperature = thermocouple.readCelsius();
+          // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
+          sendProfile();
 
-            // Ora mando l'header
-            // Send header for CSV file
-            Serial.println("Time Setpoint Input Output");
-            // Intialize seconds timer for serial debug information
-            timerSeconds = 0;
-            // Initialize PID control window starting time
-            windowStartTime = millis();
-            // Ramp up to minimum soaking temperature
-            setpoint = TEMPERATURE_SOAK_MIN;
-            // Tell the PID to range between 0 and the full window size
-            reflowOvenPID.SetOutputLimits(0, windowSize);
-            reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
-            // Turn the PID on
-            reflowOvenPID.SetMode(AUTOMATIC);
-            // Proceed to preheat stage
-            reflowState = REFLOW_STATE_PREHEAT;
-          }
+          // Ora mando l'header per il file CSV
+          Serial.println("Time Setpoint Input Output");
+          // Intialize seconds timer for serial debug information
+          timerSeconds = 0;
+          // Initialize PID control window starting time
+          windowStartTime = millis();
+          // Ramp up to minimum soaking temperature
+          setpoint = TEMPERATURE_SOAK_MIN;
+          // Tell the PID to range between 0 and the full window size
+          reflowOvenPID.SetOutputLimits(0, windowSize);
+          reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
+          // Turn the PID on
+          reflowOvenPID.SetMode(AUTOMATIC);
+          // Proceed to preheat stage
+          reflowState = REFLOW_STATE_PREHEAT;
         }
       }
       break;
@@ -476,8 +476,16 @@ void loop()
       break;
 
     case REFLOW_STATE_COMPLETE:
-      // Turn on buzzer and green LED to indicate completion
-        soundComplete();
+      // Process ended. Display time and sound song.
+      lcd.clear();
+      lcd.print("REFLOW DONE!");
+      lcd.setCursor(0,1);
+      lcd.print("time: ");
+      lcd.setCursor(11,1);
+      lcd.print(timerSeconds);
+      lcd.print(" s");
+      soundComplete();
+      
       // Reflow process ended
       reflowState = REFLOW_STATE_IDLE;
     break;
@@ -535,6 +543,26 @@ void loop()
   // PID computation and SSR control
   if (reflowStatus == REFLOW_STATUS_ON)
   {
+    if (reflowState != REFLOW_STATE_COOL && timeToCheck <= timerSeconds)
+    {
+      if (input <= checkTemperature+1)
+      {
+        reflowStatus = REFLOW_STATUS_OFF;
+        reflowState = REFLOW_STATE_ERROR;
+        lcd.clear();
+        lcd.print("ERROR  check");
+        lcd.setCursor(0,1);
+        lcd.print("Power or SSR");
+        soundError();
+      }
+      if (reflowState == REFLOW_STATE_PREHEAT)
+        timeToCheck = timerSeconds+20;
+      else
+        timeToCheck = timerSeconds+10;
+      
+      checkTemperature = input;
+    }
+    
     now = millis();
 
     reflowOvenPID.Compute();
