@@ -1,3 +1,8 @@
+public void COMlist_click(GDropList source, GEvent event)
+{
+  //COM_list.setItems(Serial.list(), COM_list.get);
+}
+
 // Imposta il profilo, lo disegna e invia i dati al controller per
 // l'impostazione dei parametri
 public void buttonSetTemp_click(GButton source, GEvent event)
@@ -167,6 +172,7 @@ public void createGUI()
   serial_ID.setOpaque(false);
   
   COM_list = new GDropList(this, 60, 10, 240, 80, 3);
+  COM_list.addEventHandler(this, "COMlist_click");
   
   labelSerialReceive = new GLabel(this, 450, 40, 300, 20);
   labelSerialReceive.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
