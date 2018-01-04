@@ -6,6 +6,10 @@
              - Display changed to 16x2 Hitachi HD44780 Compatible.
              - added data output to diplay temperature vs time.
              - added possibility to choose between lead free of leaded solder paste profiles.
+   
+   1.2       Arduino Nano v3 for GFE Hand Made Reflow Oven Controller board v1.2
+             - Added sounds.
+             - Added temperature self check. The process self stops if unable to drive the oven.
 
    Temperature (Degree Celcius)                 Magic Happens Here!
    245-|                                               x  x
@@ -35,6 +39,7 @@
 #include <LiquidCrystal.h>
 #include "Adafruit_MAX31855.h"
 #include <PID_v1.h>
+#include <PID_AutoTune_v0.h>
 
 //#define USE_LCD_KEYPAD_SHIELD
 
@@ -43,24 +48,23 @@
 
 #define TEMPERATURE_COOL_MIN 100
 #define SENSOR_SAMPLING_TIME 1000
-#define SOAK_TEMPERATURE_STEP 5
-#define SOAK_MICRO_PERIOD 9000
+#define SOAK_TEMPERATURE_STEP 2
+#define SOAK_MICRO_PERIOD 5000
 #define DEBOUNCE_PERIOD_MIN 50
-
 
 // ***** PID PARAMETERS *****
 // Pre-Heating:
-#define PID_KP_PREHEAT 100
-#define PID_KI_PREHEAT 0.025
-#define PID_KD_PREHEAT 20
+#define PID_KP_PREHEAT 60    //100
+#define PID_KI_PREHEAT 0.05    //0.025
+#define PID_KD_PREHEAT 20    //20
 // Soaking:
-#define PID_KP_SOAK 300
-#define PID_KI_SOAK 0.05
-#define PID_KD_SOAK 250
+#define PID_KP_SOAK 100  //300
+#define PID_KI_SOAK 0.05       //0.05
+#define PID_KD_SOAK 100          //250
 // Reflowing:
-#define PID_KP_REFLOW 300
-#define PID_KI_REFLOW 0.05
-#define PID_KD_REFLOW 350
+#define PID_KP_REFLOW  300     //300
+#define PID_KI_REFLOW  0.10    //0.05
+#define PID_KD_REFLOW  350    //350
 
 // Sample time:
 #define PID_SAMPLE_TIME 1000
@@ -78,7 +82,6 @@
 #define  note_ab    466 //Hz
 #define  note_b     494 //Hz
 #define  note_C     523 //Hz
-#define  note_d2  note_d*2
 
 // ***** TYPE DEFINITIONS *****
 typedef enum REFLOW_STATE
@@ -90,7 +93,8 @@ typedef enum REFLOW_STATE
   REFLOW_STATE_COOL,
   REFLOW_STATE_COMPLETE,
   REFLOW_STATE_TOO_HOT,
-  REFLOW_STATE_ERROR
+  REFLOW_STATE_ERROR,
+  REFLOW_STATE_TUNING_PH
 }
 reflowState_t;
 
@@ -111,7 +115,8 @@ const char* lcdMessagesReflowStatus[] = {
   "Cool",
   "Complete",
   "Wait,hot",
-  "Error"
+  "Error",
+  "Tuning"
 };
 
 
@@ -159,12 +164,19 @@ double output;
 double kp = PID_KP_PREHEAT;
 double ki = PID_KI_PREHEAT;
 double kd = PID_KD_PREHEAT;
-int windowSize;
+const int windowSize = 2000;
 unsigned long windowStartTime;
 unsigned long nextCheck;
 unsigned long nextRead;
 unsigned long timerSoak;
 unsigned long buzzerPeriod;
+
+// ***** PID AUTOTUNE VARIABLES *****
+byte ATuneModeRemember=2;
+#define aTuneStep        1000
+#define aTuneNoise       1
+#define aTuneStartValue 1000;
+unsigned int aTuneLookBack = 2;
 
 // Reflow oven controller state machine state variable
 reflowState_t reflowState;
@@ -174,7 +186,7 @@ reflowStatus_t reflowStatus;
 long lastDebounceTime;
 // Seconds timer
 long timerSeconds = 0;
-long timeToCheck  = 0;
+long timeToCheck  = 20;
 int checkTemperature = 0;
 
 bool endOfPrevProcess = false;
@@ -188,6 +200,8 @@ String type = "";
 // ***** DEFINING OBJECTS *****
 // Specify PID control interface
 PID reflowOvenPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);
+PID_ATune aTune(&input, &output);
+
 // Specify LCD interface
 LiquidCrystal lcd(lcdRsPin, lcdEPin, lcdD4Pin, lcdD5Pin, lcdD6Pin, lcdD7Pin);
 Adafruit_MAX31855 thermocouple(thermocoupleCLKPin, thermocoupleCSPin, thermocoupleSOPin);
@@ -207,13 +221,17 @@ void setup()
   pinMode(ledRedPin, OUTPUT);
   digitalWrite(ledRedPin, HIGH);
 
+  // Tell the PID to range between 0 and the full window size
+  reflowOvenPID.SetOutputLimits(0, windowSize);
+  reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
+
   // Start-up splash
   lcd.begin(16, 2);
   lcd.createChar(0, degree);
   lcd.clear();
   lcd.print("GFE Hand Made");
   lcd.setCursor(0, 1);
-  lcd.print("Reflow Oven 1.1");
+  lcd.print("Reflow Oven 1.2");
 
   // Serial communication at 57600 bps
   Serial.begin(57600);
@@ -227,12 +245,11 @@ void setup()
   soundStart();
   lcd.clear();
 
-  // Set window size
-  windowSize = 2000;
   // Initialize time keeping variable
   nextCheck = millis();
   // Initialize thermocouple reading variable
   nextRead = millis();
+  reflowState = REFLOW_STATE_IDLE;
 }
 
 void loop()
@@ -322,13 +339,13 @@ void loop()
       // Print current temperature
       lcd.print(input);
 
-#if ARDUINO >= 100
-      // Print degree Celsius symbol
-      lcd.write((uint8_t)0);
-#else
-      // Print degree Celsius symbol
-      lcd.print(0, BYTE);
-#endif
+      #if ARDUINO >= 100
+        // Print degree Celsius symbol
+        lcd.write((uint8_t)0);
+      #else
+        // Print degree Celsius symbol
+        lcd.print(0, BYTE);
+      #endif
       lcd.print("C ");
     }
   }
@@ -352,6 +369,8 @@ void loop()
           char dataIn[100] = {""};
           Serial.readBytes(dataIn, 100);
           String receivedString(dataIn);
+          data = dataIn[0];
+          //Serial.println("1 dataIn[0] = " + data);
 
           int iniPac = receivedString.indexOf('(');
           int endPac = receivedString.indexOf(')');
@@ -382,32 +401,61 @@ void loop()
           else
           {
             data = dataIn[0];
-            //Serial.println("dataIn[0] = " + data);
+            //Serial.println("2 dataIn[0] = " + data);
           }
         }
         
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
+
+          if(TEMPERATURE_SOAK_MIN < 50) profileSet();
+            
+          //Saving data for heating check:
           checkTemperature = thermocouple.readCelsius();
+          timeToCheck = 20;
           // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
           sendProfile();
 
           // Ora mando l'header per il file CSV
           Serial.println("Time Setpoint Input Output");
           // Intialize seconds timer for serial debug information
+          nextCheck = millis();
           timerSeconds = 0;
           // Initialize PID control window starting time
           windowStartTime = millis();
           // Ramp up to minimum soaking temperature
           setpoint = TEMPERATURE_SOAK_MIN;
-          // Tell the PID to range between 0 and the full window size
-          reflowOvenPID.SetOutputLimits(0, windowSize);
-          reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
           // Turn the PID on
           reflowOvenPID.SetMode(AUTOMATIC);
           // Proceed to preheat stage
+          reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
           reflowState = REFLOW_STATE_PREHEAT;
+        }
+        else if (data == 35) //tuning preheat code = # -> ASCII: 35
+        {
+          data = 0;
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("TUNING PREHEAT");
+          // Intialize seconds timer for serial debug information
+          timerSeconds = 0;
+          // Initialize PID control window starting time
+          windowStartTime = millis();
+          setpoint = 100;
+          reflowOvenPID.SetMode(AUTOMATIC);
+          reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
+
+          //Setting autotuner:
+          output=aTuneStartValue;
+          aTune.SetNoiseBand(aTuneNoise);
+          aTune.SetOutputStep(aTuneStep);
+          aTune.SetLookbackSec((int)aTuneLookBack);
+          AutoTuneHelper(true);
+          type = " [PH]";
+
+          //Going to autotuner mode:
+          reflowState = REFLOW_STATE_TUNING_PH;
         }
       }
       break;
@@ -420,7 +468,7 @@ void loop()
         // Chop soaking period into smaller sub-period
         timerSoak = millis() + SOAK_MICRO_PERIOD;
         // Set less agressive PID parameters for soaking ramp
-        reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
+        reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
         // Ramp up to first section of soaking temperature
         setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;
         // Proceed to soaking state
@@ -438,7 +486,7 @@ void loop()
         if (setpoint > TEMPERATURE_SOAK_MAX)
         {
           // Set agressive PID parameters for reflow ramp
-          reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
+          reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
           // Ramp up to first section of soaking temperature
           setpoint = TEMPERATURE_REFLOW_MAX;
           // Proceed to reflowing state
@@ -453,7 +501,7 @@ void loop()
       if (input >= (TEMPERATURE_REFLOW_MAX - 5))
       {
         // Set PID parameters for cooling ramp
-        reflowOvenPID.SetTunings(PID_KP_REFLOW, PID_KI_REFLOW, PID_KD_REFLOW);
+        reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
         // Ramp down to minimum cooling temperature
         setpoint = TEMPERATURE_COOL_MIN;
         // Proceed to cooling state
@@ -513,6 +561,35 @@ void loop()
         reflowState = REFLOW_STATE_IDLE;
       }
       break;
+
+   case REFLOW_STATE_TUNING_PH:
+      reflowStatus = REFLOW_STATUS_ON;
+      
+      byte val = (aTune.Runtime());
+      if (val!=0)
+      {
+        kp = aTune.GetKp();
+        ki = aTune.GetKi();
+        kd = aTune.GetKd();
+        reflowOvenPID.SetTunings(kp,ki,kd);
+
+        //Turn off autotune
+        aTune.Cancel();
+        AutoTuneHelper(false);
+
+        //Going to IDLE:
+        reflowStatus = REFLOW_STATUS_OFF;
+        reflowState = REFLOW_STATE_IDLE;
+
+        lcd.clear();
+        lcd.print("DONE");
+        lcd.print(" ");
+        lcd.print(kp);
+        lcd.setCursor(0,1);
+        lcd.print(ki);
+        delay(1000);
+      }
+   break;
   }
 
   // If switch 1 is pressed
@@ -532,7 +609,7 @@ void loop()
     else
       profileSet();
   }
-  else if (data == 999)
+  else if (data == 36)
   {
     // Turn off reflow process
     reflowStatus = REFLOW_STATUS_OFF;
@@ -543,29 +620,27 @@ void loop()
   // PID computation and SSR control
   if (reflowStatus == REFLOW_STATUS_ON)
   {
-    if (reflowState != REFLOW_STATE_COOL && timeToCheck <= timerSeconds)
+    if (reflowState != REFLOW_STATE_COOL && timeToCheck <= timerSeconds && reflowState != REFLOW_STATE_TUNING_PH)
     {
       if (input <= checkTemperature+1)
       {
         reflowStatus = REFLOW_STATUS_OFF;
-        reflowState = REFLOW_STATE_ERROR;
+        reflowState = REFLOW_STATE_IDLE;
         lcd.clear();
         lcd.print("ERROR  check");
         lcd.setCursor(0,1);
         lcd.print("Power or SSR");
         soundError();
       }
-      if (reflowState == REFLOW_STATE_PREHEAT)
-        timeToCheck = timerSeconds+20;
-      else
-        timeToCheck = timerSeconds+10;
       
+      timeToCheck = timerSeconds+20;
       checkTemperature = input;
     }
     
     now = millis();
 
-    reflowOvenPID.Compute();
+    if(reflowState != REFLOW_STATE_TUNING_PH);
+      reflowOvenPID.Compute();
 
     if ((now - windowStartTime) > windowSize)
     {

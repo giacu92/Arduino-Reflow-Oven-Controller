@@ -100,7 +100,7 @@ void soundStart()
   delay(200);
   noTone(buzzerPin);
   delay(50);
-  tone(buzzerPin, note_d2);
+  tone(buzzerPin, note_d*2);
   delay(200);
   noTone(buzzerPin);
   delay(50);
@@ -112,7 +112,7 @@ void soundStart()
   delay(200);
   noTone(buzzerPin);
   delay(50);
-  tone(buzzerPin, note_d2);
+  tone(buzzerPin, note_d*2);
   delay(200);
   noTone(buzzerPin);
   delay(50);
