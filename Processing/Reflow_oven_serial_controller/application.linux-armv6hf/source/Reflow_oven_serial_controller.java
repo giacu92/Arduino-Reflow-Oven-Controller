@@ -27,6 +27,8 @@ Serial myPort;
 
 int left_byte = 100;
 int right_byte = 10;
+int stop_byte  = 36;
+int tune_byte  = 35;
 
 int startX = 60;
 int stopY  = 50;
@@ -48,7 +50,7 @@ boolean connected = false;
 public void setup()
 {
   
-  frameRate(10);
+  frameRate(4);
   createGUI();
 
   COM_list.setItems(Serial.list(), 0);
@@ -86,13 +88,13 @@ public void serialReceive()
         riga = riga.substring(iniPac+1, endPac);
         parametri = split(riga, ','); // (timeStamp[0],setpoint[1],input[2],output[3])
         
-        println("parametri[0] = " + parametri[0]);
+        println("parametri[0] = " + parametri[0]); //<>//
         println("parametri[1] = " + parametri[1]);
         println("parametri[2] = " + parametri[2]);
         println("parametri[3] = " + parametri[3]);
         
         //Se ho ricevuto "  [L]" o "  [LF]" vado solo a modificare le temperature 
-        if (parametri[0].equals(" [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
+        if (parametri[0].equals("  [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
         {
           TEMPERATURE_SOAK_MIN   = Integer.valueOf(parametri[1]);
           TEMPERATURE_SOAK_MAX   = Integer.valueOf(parametri[2]);
@@ -195,6 +197,11 @@ public void aggiornaInterfaccia()
   graficoProfiloSfondo.endDraw();
   image(graficoProfiloSfondo, 10, 0);
 }
+public void COMlist_click(GDropList source, GEvent event)
+{
+  //COM_list.setItems(Serial.list(), COM_list.get);
+}
+
 // Imposta il profilo, lo disegna e invia i dati al controller per
 // l'impostazione dei parametri
 public void buttonSetTemp_click(GButton source, GEvent event)
@@ -237,10 +244,10 @@ public void buttonClear_click(GButton source, GEvent event)
   labelSerialReceive.setText(" ");
   
   //Reimposto il grafico:
-  TEMPERATURE_SOAK_MIN   = 140;
+  /*TEMPERATURE_SOAK_MIN   = 140;
   TEMPERATURE_SOAK_MAX   = 177;
   TEMPERATURE_REFLOW_MAX = 230;
-  TEMPERATURE_COOLDOWN   = 100;
+  TEMPERATURE_COOLDOWN   = 100;*/
   
   tf_TEMP_SOAK_MIN.setText(Integer.toString(TEMPERATURE_SOAK_MIN));
   tf_TEMP_SOAK_MAX.setText(Integer.toString(TEMPERATURE_SOAK_MAX));
@@ -250,7 +257,12 @@ public void buttonClear_click(GButton source, GEvent event)
 
 public void buttonStop_click(GButton source, GEvent event)
 {
-  myPort.write(999);
+  myPort.write(stop_byte);
+}
+
+public void buttonTune_click(GButton source, GEvent event)
+{
+  myPort.write(tune_byte);
 }
 
 public void buttonConnect_click(GButton source, GEvent event)
@@ -300,6 +312,7 @@ GButton button_clear;
 GButton button_stop; 
 GButton button_connect; 
 GButton button_setTemp;
+GButton button_tune;
 
 GLabel serial_ID; 
 GLabel labelX; 
@@ -319,7 +332,7 @@ public void createGUI()
   G4P.messagesEnabled(false);
   G4P.setGlobalColorScheme(GCScheme.BLUE_SCHEME);
   G4P.setCursor(ARROW);
-  surface.setTitle("GFE Reflow Oven data grapher");
+  surface.setTitle("GFE Reflow Oven Serial Controller");
   
   tf_TEMP_SOAK_MIN = new GTextField(this, startX+50 , 80, 58, 20);
   tf_TEMP_SOAK_MIN.setText(Integer.toString(TEMPERATURE_SOAK_MIN));
@@ -338,15 +351,15 @@ public void createGUI()
   button_setTemp.addEventHandler(this, "buttonSetTemp_click");
   
   button_left = new GButton(this, 60, 390, 80, 50);
-  button_left.setText("left");
+  button_left.setText("LEFT");
   button_left.addEventHandler(this, "buttonLeft_click");
   
   button_right = new GButton(this, 260, 390, 80, 50);
-  button_right.setText("right");
+  button_right.setText("RIGHT");
   button_right.addEventHandler(this, "buttonRight_click");
   
   button_clear = new GButton(this, 460, 390, 80, 50);
-  button_clear.setText("clear");
+  button_clear.setText("CLEAR");
   button_clear.addEventHandler(this, "buttonClear_click");
   
   button_stop = new GButton(this, 660, 390, 80, 50);
@@ -358,6 +371,10 @@ public void createGUI()
   button_connect.setLocalColorScheme(GCScheme.CYAN_SCHEME);
   button_connect.addEventHandler(this, "buttonConnect_click");
   
+  button_tune = new GButton(this, 720, 120, 40, 60);
+  button_tune.setText("tune PID");
+  button_tune.addEventHandler(this, "buttonTune_click");
+  
   serial_ID = new GLabel(this, 450, 10, 300, 20);
   serial_ID.setText("not connected");
   serial_ID.setTextItalic();
@@ -365,7 +382,7 @@ public void createGUI()
   
   COM_list = new GDropList(this, 60, 10, 240, 80, 3);
   
-  labelSerialReceive = new GLabel(this, 450, 40, 300, 20);
+  labelSerialReceive = new GLabel(this, 450, 30, 300, 20);
   labelSerialReceive.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
   
   labelX = new GLabel(this, 120, 40, 80, 20);

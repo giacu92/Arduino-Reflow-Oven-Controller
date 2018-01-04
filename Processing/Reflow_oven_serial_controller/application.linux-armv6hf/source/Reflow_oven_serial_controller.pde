@@ -8,6 +8,8 @@ Serial myPort;
 
 int left_byte = 100;
 int right_byte = 10;
+int stop_byte  = 36;
+int tune_byte  = 35;
 
 int startX = 60;
 int stopY  = 50;
@@ -29,7 +31,7 @@ boolean connected = false;
 public void setup()
 {
   size(800, 450, JAVA2D);
-  frameRate(10);
+  frameRate(4);
   createGUI();
 
   COM_list.setItems(Serial.list(), 0);
@@ -67,13 +69,13 @@ void serialReceive()
         riga = riga.substring(iniPac+1, endPac);
         parametri = split(riga, ','); // (timeStamp[0],setpoint[1],input[2],output[3])
         
-        println("parametri[0] = " + parametri[0]);
+        println("parametri[0] = " + parametri[0]); //<>//
         println("parametri[1] = " + parametri[1]);
         println("parametri[2] = " + parametri[2]);
         println("parametri[3] = " + parametri[3]);
         
         //Se ho ricevuto "  [L]" o "  [LF]" vado solo a modificare le temperature 
-        if (parametri[0].equals(" [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
+        if (parametri[0].equals("  [L]") || parametri[0].equals(" [LF]") || parametri[0].equals(" [C]"))
         {
           TEMPERATURE_SOAK_MIN   = Integer.valueOf(parametri[1]);
           TEMPERATURE_SOAK_MAX   = Integer.valueOf(parametri[2]);
