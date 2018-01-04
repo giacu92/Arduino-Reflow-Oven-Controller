@@ -61,6 +61,11 @@ public void buttonStop_click(GButton source, GEvent event)
   myPort.write(stop_byte);
 }
 
+public void buttonTune_click(GButton source, GEvent event)
+{
+  myPort.write(tune_byte);
+}
+
 public void buttonConnect_click(GButton source, GEvent event)
 { 
   try
@@ -108,6 +113,7 @@ GButton button_clear;
 GButton button_stop; 
 GButton button_connect; 
 GButton button_setTemp;
+GButton button_tune;
 
 GLabel serial_ID; 
 GLabel labelX; 
@@ -127,7 +133,7 @@ public void createGUI()
   G4P.messagesEnabled(false);
   G4P.setGlobalColorScheme(GCScheme.BLUE_SCHEME);
   G4P.setCursor(ARROW);
-  surface.setTitle("GFE Reflow Oven data grapher");
+  surface.setTitle("GFE Reflow Oven Serial Controller");
   
   tf_TEMP_SOAK_MIN = new GTextField(this, startX+50 , 80, 58, 20);
   tf_TEMP_SOAK_MIN.setText(Integer.toString(TEMPERATURE_SOAK_MIN));
@@ -166,15 +172,18 @@ public void createGUI()
   button_connect.setLocalColorScheme(GCScheme.CYAN_SCHEME);
   button_connect.addEventHandler(this, "buttonConnect_click");
   
+  button_tune = new GButton(this, 720, 120, 40, 60);
+  button_tune.setText("tune PID");
+  button_tune.addEventHandler(this, "buttonTune_click");
+  
   serial_ID = new GLabel(this, 450, 10, 300, 20);
   serial_ID.setText("not connected");
   serial_ID.setTextItalic();
   serial_ID.setOpaque(false);
   
   COM_list = new GDropList(this, 60, 10, 240, 80, 3);
-  COM_list.addEventHandler(this, "COMlist_click");
   
-  labelSerialReceive = new GLabel(this, 450, 40, 300, 20);
+  labelSerialReceive = new GLabel(this, 450, 30, 300, 20);
   labelSerialReceive.setTextAlign(GAlign.LEFT, GAlign.MIDDLE);
   
   labelX = new GLabel(this, 120, 40, 80, 20);

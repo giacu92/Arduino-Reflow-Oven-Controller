@@ -8,7 +8,8 @@ Serial myPort;
 
 int left_byte = 100;
 int right_byte = 10;
-int stop_byte  = 999;
+int stop_byte  = 36;
+int tune_byte  = 35;
 
 int startX = 60;
 int stopY  = 50;
