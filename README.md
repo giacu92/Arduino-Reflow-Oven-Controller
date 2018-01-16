@@ -11,7 +11,7 @@ This repo contains all the files of my Arduino Nano based Reflow Oven PID Contro
 * [Prova.sch](https://github.com/giacu92/GFE-Reflow-Oven-Controller/blob/master/Prova.sch): Cadsoft Eagle 6.5 .sch file of my Reflow Oven Controller.
 
 # Mounting the board:
-Get a fully assembled board [here](http://gfehandmade.bigcartel.com/product/reflow-oven-controller-board-v1-1) or etch it yourself.
+Get a fully assembled board [here](http://giacu92.bigcartel.com/product/reflow-oven-controller-board-v1-1) or etch it yourself.
 
 The board can be easely populated. You need to add a 16x2 HD44780 compatibile display, an Arduino Nano and a couple of normally-open momentary switches. You can omit the switches if using with the Java serial controller.
 As done just download the files, upload the Arduino sketch and connect it on the board.
