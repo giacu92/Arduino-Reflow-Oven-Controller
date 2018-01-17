@@ -10,7 +10,7 @@ public void buttonSetTemp_click(GButton source, GEvent event)
   //leggo dalle textfield
   int t_soak_min   = Integer.valueOf(tf_TEMP_SOAK_MIN.getText());
   int t_soak_max   = Integer.valueOf(tf_TEMP_SOAK_MAX.getText());
-  int t_refl_max = Integer.valueOf(tf_TEMP_REFL_MAX.getText());
+  int t_refl_max   = Integer.valueOf(tf_TEMP_REFL_MAX.getText());
   int t_cooldown   = Integer.valueOf(tf_TEMP_COOL.getText());
 
   //scrivo tutto sulla stringa da mandare
