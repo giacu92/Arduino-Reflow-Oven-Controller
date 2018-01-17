@@ -639,7 +639,7 @@ void loop()
     
     now = millis();
 
-    if(reflowState != REFLOW_STATE_TUNING_PH);
+    if(reflowState != REFLOW_STATE_TUNING_PH)
       reflowOvenPID.Compute();
 
     if ((now - windowStartTime) > windowSize)
