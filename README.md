@@ -37,6 +37,6 @@ The newer version of the Controller allows the user to draw a custom temperature
 
 # Newer version v2
 A newer version of the pcb is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and SD card support for saving custom profiles are getting implemented.
-![New](http://i66.tinypic.com/54f5z8.png)
+![New](http://i67.tinypic.com/30s9a2s.png)
 
 This project is under continuous update (Jan 2018). Contact me for anything :)
