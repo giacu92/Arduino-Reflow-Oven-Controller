@@ -35,8 +35,8 @@ The GUI for now contains the essential. It plot the temperature-vs-time graph re
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
 
-# Newer version v1.2
+# Newer version v2
 A newer version of the pcb is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and SD card support for saving custom profiles are getting implemented.
-![New](http://i65.tinypic.com/14tse94.png)
+![New](http://i66.tinypic.com/54f5z8.png)
 
 This project is under continuous update (Jan 2018). Contact me for anything :)
