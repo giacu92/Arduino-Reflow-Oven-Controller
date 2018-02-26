@@ -35,6 +35,18 @@ The GUI for now contains the essential. It plot the temperature-vs-time graph re
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
 
+# Usage with the LCD Keypad SHIELD
+![LCD Keypad](http://i68.tinypic.com/scygyw.jpg)
+[LCD Keypad resize]: (http://i65.tinypic.com/6rnaqh.jpg)
+If you wish to build the controller by yourself you can use the [DFRobot - LCD Keypad SHIELD](https://www.dfrobot.com/wiki/index.php/Arduino_LCD_KeyPad_Shield_(SKU:_DFR0009)) which provides easy access to the LCD display and has a pre-built button interface.
+Since the board has different pin arragement the software must be able to know at which type of board it is interfacing to.
+You can enable the usage of the LCD Keypad SHIELD by uncommenting the line of code no. 44:
+```cpp
+44  #define USE_LCD_KEYPAD_SHIELD
+```
+Using the LCD Keypad Shield forces you to different pin arrangement. My proposal is the following but feel free to modify to as you wish.
+![LCD Key pins](http://i64.tinypic.com/2a65a8k.jpg)
+
 # Newer version v2
 A newer version of the pcb is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and SD card support for saving custom profiles are getting implemented.
 ![New](http://i67.tinypic.com/30s9a2s.png)
