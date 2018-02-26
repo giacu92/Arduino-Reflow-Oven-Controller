@@ -41,7 +41,7 @@
 #include <PID_v1.h>
 #include <PID_AutoTune_v0.h>
 
-#define USE_LCD_KEYPAD_SHIELD
+//#define USE_LCD_KEYPAD_SHIELD
 
 // ***** CONSTANTS *****
 #define TEMPERATURE_ROOM 50
@@ -129,18 +129,18 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define btnLEFT   3
   #define btnSELECT 4
   #define btnNONE   5
-  #define ssrPin             1//6
-  #define thermocoupleSOPin  1//5
-  #define thermocoupleCSPin  1//4
-  #define thermocoupleCLKPin 1//3
+  #define ssrPin             2//6
+  #define thermocoupleSOPin  11//5
+  #define thermocoupleCSPin  12//4
+  #define thermocoupleCLKPin 13//3
   #define lcdRsPin           8//9
   #define lcdEPin            9//10
   #define lcdD4Pin           4//A5
   #define lcdD5Pin           5//A4
   #define lcdD6Pin           6//A3
   #define lcdD7Pin           7//A2
-  #define ledRedPin          1//8
-  #define buzzerPin          1//7
+  #define ledRedPin          A1//8
+  #define buzzerPin          A2//7
   #define switchPin          A0
   #define lcdBrightnessPin   10
 #else
@@ -254,8 +254,8 @@ void setup()
   reflowState = REFLOW_STATE_IDLE;
 
   #ifdef USE_LCD_KEYPAD_SHIELD
-    //pinMode(lcdBrightnessPin, OUTPUT);
-    analogWrite(10, 10);
+    pinMode(lcdBrightnessPin, OUTPUT);
+    analogWrite(lcdBrightnessPin, 125);
   #endif
 }
 

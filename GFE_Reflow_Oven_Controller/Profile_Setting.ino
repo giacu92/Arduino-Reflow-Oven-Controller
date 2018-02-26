@@ -24,7 +24,7 @@ void menu_page()
     
   else if (val >= 30 || data == 100)
   {    
-    while(analogRead(switchPin) < 1000) { delay(100) } // debounce
+    while(analogRead(switchPin) < 1000) { delay(100); } // debounce
     delay(100);
     profileSet();
   }
