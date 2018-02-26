@@ -41,7 +41,7 @@
 #include <PID_v1.h>
 #include <PID_AutoTune_v0.h>
 
-//#define USE_LCD_KEYPAD_SHIELD
+#define USE_LCD_KEYPAD_SHIELD
 
 // ***** CONSTANTS *****
 #define TEMPERATURE_ROOM 50
@@ -105,7 +105,6 @@ typedef enum REFLOW_STATUS
 }
 reflowStatus_t;
 
-
 // ***** LCD MESSAGES *****
 const char* lcdMessagesReflowStatus[] = {
   "Ready",
@@ -119,13 +118,17 @@ const char* lcdMessagesReflowStatus[] = {
   "Tuning"
 };
 
-
 // ***** DEGREE SYMBOL FOR LCD *****
 unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
-
 // ***** PIN ASSIGNMENT *****
 #ifdef USE_LCD_KEYPAD_SHIELD
+  #define btnRIGHT  0
+  #define btnUP     1
+  #define btnDOWN   2
+  #define btnLEFT   3
+  #define btnSELECT 4
+  #define btnNONE   5
   #define ssrPin             1//6
   #define thermocoupleSOPin  1//5
   #define thermocoupleCSPin  1//4
@@ -139,6 +142,7 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define ledRedPin          1//8
   #define buzzerPin          1//7
   #define switchPin          A0
+  #define lcdBrightnessPin   10
 #else
   #define ssrPin             6
   #define thermocoupleSOPin  5
@@ -155,7 +159,6 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define switchPin          A0
 #endif
 int data = 0;
-
 
 // ***** PID CONTROL VARIABLES *****
 double setpoint;
@@ -208,7 +211,6 @@ Adafruit_MAX31855 thermocouple(thermocoupleCLKPin, thermocoupleCSPin, thermocoup
 
 void setup()
 {
-
   // SSR pin initialization to ensure reflow oven is off
   pinMode(ssrPin, OUTPUT);
   digitalWrite(ssrPin, LOW);
@@ -241,7 +243,7 @@ void setup()
   // Turn off LED (active low)
   digitalWrite(ledRedPin, LOW);
 
-  //profileSet();
+  // Welcome sound
   soundStart();
   lcd.clear();
 
@@ -250,6 +252,11 @@ void setup()
   // Initialize thermocouple reading variable
   nextRead = millis();
   reflowState = REFLOW_STATE_IDLE;
+
+  #ifdef USE_LCD_KEYPAD_SHIELD
+    //pinMode(lcdBrightnessPin, OUTPUT);
+    analogWrite(10, 10);
+  #endif
 }
 
 void loop()
@@ -319,7 +326,11 @@ void loop()
     {
       lcd.print("start");
       lcd.setCursor(0, 1);
-      lcd.print("prSet");
+      #ifdef USE_LCD_KEYPAD_SHIELD
+        lcd.print("menu");
+      #else
+        lcd.print("prSet");
+      #endif
     }
 
     // Print current system state
@@ -408,8 +419,12 @@ void loop()
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
+          #ifdef USE_LCD_KEYPAD_SHIELD
+            delay(200);
+          #endif
 
-          if(TEMPERATURE_SOAK_MIN < 50) profileSet();
+          if(TEMPERATURE_SOAK_MIN < 50)
+            profileSet();
             
           //Saving data for heating check:
           checkTemperature = thermocouple.readCelsius();
@@ -564,6 +579,15 @@ void loop()
 
    case REFLOW_STATE_TUNING_PH:
       reflowStatus = REFLOW_STATUS_ON;
+
+      if(timerSeconds > 180)
+      {
+        reflowStatus = REFLOW_STATUS_OFF;
+        reflowState  = REFLOW_STATE_IDLE;
+        lcd.clear();
+        lcd.print("ERROR, aborting");
+        soundError();
+      }
       
       byte val = (aTune.Runtime());
       if (val!=0)
@@ -596,6 +620,9 @@ void loop()
   if (Serial.available() > 0) data = Serial.read();
   if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == 100)
   {
+    #ifdef USE_LCD_KEYPAD_SHIELD
+      delay(200);
+    #endif
     data = 0;
     // If currently reflow process is on going
     if (reflowStatus == REFLOW_STATUS_ON)
@@ -607,7 +634,12 @@ void loop()
       reflowState = REFLOW_STATE_IDLE;
     }
     else
-      profileSet();
+      #ifdef USE_LCD_KEYPAD_SHIELD
+        delay(200);
+        menu_page();
+     #else
+        profileSet();
+     #endif
   }
   else if (data == 36)
   {

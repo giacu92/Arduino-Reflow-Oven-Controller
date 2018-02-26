@@ -1,3 +1,37 @@
+void menu_page()
+{
+  lcd.clear();
+  lcd.setCursor(6,0);
+  lcd.print("MENU");
+  lcd.setCursor(0,1);
+  lcd.print("prSet");
+  lcd.setCursor(11,1);
+  lcd.print("build");
+
+  int val = 1024;
+  while(val > 1000 && data == 0) // need a pull-up resistor (10KΩ)
+  {
+    val = analogRead(switchPin);
+  }
+  
+  if (val < 30 || data == 10) //right button pressed => build profile
+  {
+    #ifdef USE_LCD_KEYPAD_SHIELD
+      delay(200);
+      profileBuild();
+    #endif
+  }
+    
+  else if (val >= 30 || data == 100)
+  {    
+    while(analogRead(switchPin) < 1000) { delay(100) } // debounce
+    delay(100);
+    profileSet();
+  }
+
+  data = 0;
+}
+
 void profileSet()
 {
    
@@ -27,6 +61,9 @@ void profileSet()
 
   if (val < 30 || data == 10) //right button pressed => LEADED_PROFILE
   {
+    #ifdef USE_LCD_KEYPAD_SHIELD
+      delay(200);
+    #endif
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 177;
     TEMPERATURE_REFLOW_MAX = 210;
@@ -35,6 +72,9 @@ void profileSet()
     
   else if (val >= 30 || data == 100)
   {
+    #ifdef USE_LCD_KEYPAD_SHIELD
+      delay(200);
+    #endif
     TEMPERATURE_SOAK_MIN = 150;
     TEMPERATURE_SOAK_MAX = 200;
     TEMPERATURE_REFLOW_MAX = 250;
@@ -90,7 +130,7 @@ void sendProfile()
   delay(1000);
 }
 
-void soundStart()
+void soundStart() //Roppoppò
 {
   tone(buzzerPin, note_g);
   delay(400);
@@ -117,11 +157,11 @@ void soundStart()
   noTone(buzzerPin);
   delay(50);
   tone(buzzerPin, note_g);
-  delay(1000);
+  delay(400);
   noTone(buzzerPin);
 }
 
-void soundComplete()
+void soundComplete() //Indiana Jones
 {
   tone(buzzerPin, note_cd);
   delay(300);
@@ -152,7 +192,7 @@ void soundComplete()
   noTone(buzzerPin);
 }
 
-void soundError()
+void soundError() //Imperial March
 {
   tone(buzzerPin, note_f);
   delay(500);
