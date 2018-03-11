@@ -652,9 +652,9 @@ void loop()
   // PID computation and SSR control
   if (reflowStatus == REFLOW_STATUS_ON)
   {
-    if (reflowState != REFLOW_STATE_COOL && timeToCheck <= timerSeconds && reflowState != REFLOW_STATE_TUNING_PH)
+    if (reflowState == REFLOW_STATE_PREHEAT)  //check for SSR failures on PREHEAT stage
     {
-      if (input <= checkTemperature+1)
+      if (input < checkTemperature)
       {
         reflowStatus = REFLOW_STATUS_OFF;
         reflowState = REFLOW_STATE_IDLE;
