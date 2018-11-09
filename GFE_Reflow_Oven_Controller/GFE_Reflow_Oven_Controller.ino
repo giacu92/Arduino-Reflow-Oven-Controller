@@ -49,7 +49,7 @@
 #define TEMPERATURE_COOL_MIN 100
 #define SENSOR_SAMPLING_TIME 1000
 #define SOAK_TEMPERATURE_STEP 2
-#define SOAK_MICRO_PERIOD 5000
+#define SOAK_MICRO_PERIOD 7000
 #define DEBOUNCE_PERIOD_MIN 50
 
 // ***** PID PARAMETERS *****
@@ -87,6 +87,7 @@
 typedef enum REFLOW_STATE
 {
   REFLOW_STATE_IDLE,
+  REFLOW_STATE_PRIOR,
   REFLOW_STATE_PREHEAT,
   REFLOW_STATE_SOAK,
   REFLOW_STATE_REFLOW,
@@ -108,6 +109,7 @@ reflowStatus_t;
 // ***** LCD MESSAGES *****
 const char* lcdMessagesReflowStatus[] = {
   "Ready",
+  "Prior",
   "Preheat",
   "Soak",
   "Reflow",
@@ -194,9 +196,10 @@ int checkTemperature = 0;
 
 bool endOfPrevProcess = false;
 
-int TEMPERATURE_SOAK_MIN = 0;
-int TEMPERATURE_SOAK_MAX = 0;
-int TEMPERATURE_REFLOW_MAX = 0;
+int TEMPERATURE_PREHEAT_MIN = 40;
+int TEMPERATURE_SOAK_MIN = 150;
+int TEMPERATURE_SOAK_MAX = 177;
+int TEMPERATURE_REFLOW_MAX = 230;
 
 String type = "";
 
@@ -286,7 +289,7 @@ void loop()
     // Check input in the next seconds
     nextCheck += 1000;
     // If reflow process is on going
-    if (reflowStatus == REFLOW_STATUS_ON)
+    if (reflowStatus == REFLOW_STATUS_ON && reflowState != REFLOW_STATE_PRIOR)
     {
       // Toggle red LED as system heart beat
       digitalWrite(ledRedPin, !(digitalRead(ledRedPin)));
@@ -432,6 +435,12 @@ void loop()
           // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
           sendProfile();
 
+          //while(input < 40) //PRIOR HEATING
+          //{
+          //  digitalWrite(ssrPin, HIGH);
+          //}
+          
+
           // Ora mando l'header per il file CSV
           Serial.println("Time Setpoint Input Output");
           // Intialize seconds timer for serial debug information
@@ -445,7 +454,8 @@ void loop()
           reflowOvenPID.SetMode(AUTOMATIC);
           // Proceed to preheat stage
           reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
-          reflowState = REFLOW_STATE_PREHEAT;
+          reflowState = REFLOW_STATE_PRIOR; //prior heating to heat up the quartz elements
+          //reflowState = REFLOW_STATE_PREHEAT;
         }
         else if (data == 35) //tuning preheat code = # -> ASCII: 35
         {
@@ -474,6 +484,13 @@ void loop()
         }
       }
       break;
+
+    case REFLOW_STATE_PRIOR:
+      reflowStatus = REFLOW_STATUS_ON;
+      if(input >= TEMPERATURE_PREHEAT_MIN)
+      {
+        reflowState = REFLOW_STATE_PREHEAT;
+      }
 
     case REFLOW_STATE_PREHEAT:
       reflowStatus = REFLOW_STATUS_ON;
@@ -666,7 +683,7 @@ void loop()
       }
       
       timeToCheck = timerSeconds+20;
-      checkTemperature = input;
+      checkTemperature = input + 0.5;
     }
     
     now = millis();
