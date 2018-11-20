@@ -30,7 +30,7 @@ The board and all the electronics will be put inside a 3D printed box. This how 
 # PROCESSING Serial Controller
 By connecting the Arduino Nano USB cable to the PC (currently i'm working with Raspberry Pi as serial controller) you'll be able to control the microcontroller and get rid of the pushbutton interface and display (or use them both together). So I wrote a Serial Controller Interface in Processing which allows me to read and send data back and forth the microcontroller.
 The GUI for now contains the essential. It plot the temperature-vs-time graph respect to a standard profile. Now time to tune PID to match thermal capabilities of my oven.
-![GUI](http://i68.tinypic.com/8wd15v.png)
+![GUI](http://i66.tinypic.com/2vbllqx.png)
 
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
