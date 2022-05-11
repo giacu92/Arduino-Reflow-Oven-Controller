@@ -47,4 +47,4 @@ A newer version of the pcb featuring two thermocouple interface, +12V fan output
 ![New](https://iili.io/WwUWf2.png)
 ![New_top](https://iili.io/WwUZzJ.png)
 
-This project is under continuous update (Jan 2018). Contact me for anything :)
+This project is under continuous update (May 2022). Contact me for anything :)
