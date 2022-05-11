@@ -51,6 +51,6 @@ Using the LCD Keypad Shield forces you to different pin arrangement. My proposal
 
 # Newer version v2
 A newer version of the pcb featuring two thermocouple interface, +12V fan output (for cooling) is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and MicroSD card interface for saving custom profiles are getting implemented.
-![New](https://freeimage.host/i/WwUWf2)
+![New](https://iili.io/WwUWf2.png)
 
 This project is under continuous update (Jan 2018). Contact me for anything :)
