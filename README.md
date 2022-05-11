@@ -2,7 +2,7 @@
 This repo contains all the files of my Arduino Nano based Reflow Oven PID Controller for reflow smd soldering.
 
 * Author: Giacomo Mammarella
-* email: giacomo.mammarella@student.univaq.it
+* email: mammarella.@gmail.com,
 
 # File list:
 * [Arduino files](https://github.com/giacu92/Reflow-Oven-Controller/tree/master/GFE_Reflow_Oven_Controller): The Arduino files source folder.
@@ -35,6 +35,8 @@ The GUI for now contains the essential. It plot the temperature-vs-time graph re
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
 
+# Support for PROCESSING Serial Controlled is dropped in favour of newer PYTHON serial controller (see v2 version below)
+
 # Usage with the LCD Keypad SHIELD
 [LCD Keypad]: (http://i68.tinypic.com/scygyw.jpg)
 [LCD Keypad resize]: (http://i65.tinypic.com/6rnaqh.jpg)
@@ -48,7 +50,7 @@ Using the LCD Keypad Shield forces you to different pin arrangement. My proposal
 ![LCD Key pins](http://i64.tinypic.com/2a65a8k.jpg)
 
 # Newer version v2
-A newer version of the pcb is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and SD card support for saving custom profiles are getting implemented.
-![New](http://i67.tinypic.com/30s9a2s.png)
+A newer version of the pcb featuring two thermocouple interface, +12V fan output (for cooling) is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and MicroSD card interface for saving custom profiles are getting implemented.
+![New](https://freeimage.host/i/WwUWf2)
 
 This project is under continuous update (Jan 2018). Contact me for anything :)
