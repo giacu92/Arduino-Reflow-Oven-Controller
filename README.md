@@ -17,20 +17,15 @@ The board can be easely populated. You need to add a 16x2 HD44780 compatibile di
 As done just download the files, upload the Arduino sketch and connect it on the board.
 If using the momentary switches, they must be connected as shown:
 
-![Connection](http://i65.tinypic.com/2lwvm1l.png)
-
 In this way A0 can be used to detect which button is pressed.
 
 I previously built a breadboard version and now finally developed a board. I got some spare boards in case you're looking for one of this.
-![Board](http://i68.tinypic.com/24o6quf.jpg)
 
 The board and all the electronics will be put inside a 3D printed box. This how it will looks like..
-![Box](http://i63.tinypic.com/ae1bwy.jpg)
 
 # PROCESSING Serial Controller
 By connecting the Arduino Nano USB cable to the PC (currently i'm working with Raspberry Pi as serial controller) you'll be able to control the microcontroller and get rid of the pushbutton interface and display (or use them both together). So I wrote a Serial Controller Interface in Processing which allows me to read and send data back and forth the microcontroller.
 The GUI for now contains the essential. It plot the temperature-vs-time graph respect to a standard profile. Now time to tune PID to match thermal capabilities of my oven.
-![GUI](http://i66.tinypic.com/2vbllqx.png)
 
 ### UPDATE:
 The newer version of the Controller allows the user to draw a custom temperature profile and send it to the controller board. The profile can only be set in "IDLE MODE". Just choose the temperatures for each reflowing stage and hit "Set" button to send them to the microcontroller.
@@ -38,8 +33,6 @@ The newer version of the Controller allows the user to draw a custom temperature
 # Support for PROCESSING Serial Controlled is dropped in favour of newer PYTHON serial controller (see v2 version below)
 
 # Usage with the LCD Keypad SHIELD
-[LCD Keypad]: (http://i68.tinypic.com/scygyw.jpg)
-[LCD Keypad resize]: (http://i65.tinypic.com/6rnaqh.jpg)
 If you wish to build the controller by yourself you can use the [DFRobot - LCD Keypad SHIELD](https://www.dfrobot.com/wiki/index.php/Arduino_LCD_KeyPad_Shield_(SKU:_DFR0009)) which provides easy access to the LCD display and has a pre-built button interface.
 Since the board has different pin arragement the software must be able to know at which type of board it is interfacing to.
 You can enable the usage of the LCD Keypad SHIELD by uncommenting the line of code no. 44:
@@ -52,5 +45,6 @@ Using the LCD Keypad Shield forces you to different pin arrangement. My proposal
 # Newer version v2
 A newer version of the pcb featuring two thermocouple interface, +12V fan output (for cooling) is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and MicroSD card interface for saving custom profiles are getting implemented.
 ![New](https://iili.io/WwUWf2.png)
+![New_top](https://iili.io/WwUZzJ.png)
 
 This project is under continuous update (Jan 2018). Contact me for anything :)
