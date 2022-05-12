@@ -17876,12 +17876,12 @@ Source: www.kingbright.com</description>
 <part name="U$17" library="microbuilder" deviceset="GND" device=""/>
 <part name="U$18" library="microbuilder" deviceset="12V" device=""/>
 <part name="GND10" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
-<part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0603K" package3d_urn="urn:adsk.eagle:package:23680/2" value="10uF"/>
+<part name="C1" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0603K" package3d_urn="urn:adsk.eagle:package:23680/2" value="100n"/>
 <part name="IC3" library="adafruit" deviceset="MAX6675" device="" override_package3d_urn="urn:adsk.eagle:package:35728084/2" override_package_urn="urn:adsk.eagle:footprint:35728085/1" value="MAX31855"/>
 <part name="GND11" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="+3V17" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="+3V18" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
-<part name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0603K" package3d_urn="urn:adsk.eagle:package:23680/2" value="10uF"/>
+<part name="C2" library="rcl" library_urn="urn:adsk.eagle:library:334" deviceset="C-EU" device="C0603K" package3d_urn="urn:adsk.eagle:package:23680/2" value="100n"/>
 <part name="+3V19" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="+3V3" device=""/>
 <part name="GND19" library="supply1" library_urn="urn:adsk.eagle:library:371" deviceset="GND" device=""/>
 <part name="FB2" library="microbuilder" deviceset="FERRITE" device="BEAD" package3d_urn="urn:adsk.eagle:package:35728116/1" value="Ferrite"/>
@@ -19296,7 +19296,7 @@ BUTTON CONNECTOR</text>
 <label x="426.72" y="63.5" size="1.778" layer="95" ratio="12"/>
 </segment>
 </net>
-<net name="N$29" class="0">
+<net name="XIN32" class="0">
 <segment>
 <pinref part="C12" gate="G$1" pin="1"/>
 <wire x1="317.5" y1="81.28" x2="325.12" y2="81.28" width="0.1524" layer="91"/>
@@ -19307,9 +19307,10 @@ BUTTON CONNECTOR</text>
 <pinref part="IC5" gate="G$1" pin="PA00(XIN32/SER1:0/TC2:0)"/>
 <wire x1="332.74" y1="76.2" x2="350.52" y2="76.2" width="0.1524" layer="91"/>
 <wire x1="332.74" y1="81.28" x2="332.74" y2="76.2" width="0.1524" layer="91"/>
+<label x="337.82" y="76.2" size="1.778" layer="95"/>
 </segment>
 </net>
-<net name="N$31" class="0">
+<net name="XOUT32" class="0">
 <segment>
 <pinref part="C11" gate="G$1" pin="1"/>
 <pinref part="X3" gate="G$1" pin="P$2"/>
@@ -19320,6 +19321,7 @@ BUTTON CONNECTOR</text>
 <wire x1="332.74" y1="66.04" x2="332.74" y2="71.12" width="0.1524" layer="91"/>
 <pinref part="IC5" gate="G$1" pin="PA01(XOUT32/SER1:1/TC2:1)"/>
 <wire x1="332.74" y1="71.12" x2="350.52" y2="71.12" width="0.1524" layer="91"/>
+<label x="337.82" y="71.12" size="1.778" layer="95"/>
 </segment>
 </net>
 <net name="N$32" class="0">
