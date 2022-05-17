@@ -1,10 +1,12 @@
-void AutoTuneHelper(boolean start)
-{
-  if(start)
-    ATuneModeRemember = reflowOvenPID.GetMode();
-  else
-    reflowOvenPID.SetMode(ATuneModeRemember);
-}
+#ifdef AUTOTUNE_BETA
+  void AutoTuneHelper(boolean start)
+  {
+    if(start)
+      ATuneModeRemember = reflowOvenPID.GetMode();
+    else
+      reflowOvenPID.SetMode(ATuneModeRemember);
+  }
+#endif
 
 #ifdef USE_LCD_KEYPAD_SHIELD
   

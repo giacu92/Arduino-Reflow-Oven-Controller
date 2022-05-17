@@ -6,7 +6,7 @@
              - Display changed to 16x2 Hitachi HD44780 Compatible.
              - added data output to diplay temperature vs time.
              - added possibility to choose between lead free of leaded solder paste profiles.
-   
+
    1.2       Arduino Nano v3 for GFE Hand Made Reflow Oven Controller board v1.2
              - Added sounds.
              - Added temperature self check. The process self stops if unable to drive the oven.
@@ -39,9 +39,30 @@
 #include <LiquidCrystal.h>
 #include "Adafruit_MAX31855.h"
 #include <PID_v1.h>
-#include <PID_AutoTune_v0.h>
 
 //#define USE_LCD_KEYPAD_SHIELD
+//#define VERSION_2_ZERO
+
+//#define ETH_DEBUG
+
+//#define USE_ETHERNET
+#define AUTOTUNE_BETA
+
+// ***** TCP IP CONFIG *****
+#ifdef USE_ETHERNET
+  #include "Ethernet.h"
+  byte mac[] = {0xE8, 0x2A, 0xEA, 0x4B, 0x1F, 0xC3};
+  IPAddress ip(192, 168, 0, 177);
+  unsigned int port = 50001;
+  
+  EthernetServer server(port);
+  EthernetClient client;
+#endif
+
+// ***** AUTOTUNE *****
+#ifdef AUTOTUNE_BETA
+  #include <PID_AutoTune_v0.h>
+#endif
 
 // ***** CONSTANTS *****
 #define TEMPERATURE_ROOM 50
@@ -49,8 +70,9 @@
 #define TEMPERATURE_COOL_MIN 100
 #define SENSOR_SAMPLING_TIME 1000
 #define SOAK_TEMPERATURE_STEP 2
-#define SOAK_MICRO_PERIOD 7000
+#define SOAK_MICRO_PERIOD 10000 /*7000*/
 #define DEBOUNCE_PERIOD_MIN 50
+
 
 // ***** PID PARAMETERS *****
 // Pre-Heating:
@@ -124,41 +146,55 @@ const char* lcdMessagesReflowStatus[] = {
 unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 // ***** PIN ASSIGNMENT *****
-#ifdef USE_LCD_KEYPAD_SHIELD
-  #define btnRIGHT  0
-  #define btnUP     1
-  #define btnDOWN   2
-  #define btnLEFT   3
-  #define btnSELECT 4
-  #define btnNONE   5
-  #define ssrPin             2//6
-  #define thermocoupleSOPin  11//5
-  #define thermocoupleCSPin  12//4
-  #define thermocoupleCLKPin 13//3
-  #define lcdRsPin           8//9
-  #define lcdEPin            9//10
-  #define lcdD4Pin           4//A5
-  #define lcdD5Pin           5//A4
-  #define lcdD6Pin           6//A3
-  #define lcdD7Pin           7//A2
-  #define ledRedPin          A1//8
-  #define buzzerPin          A2//7
-  #define switchPin          A0
-  #define lcdBrightnessPin   10
+#if defined(USE_LCD_KEYPAD_SHIELD)
+#define btnRIGHT  0
+#define btnUP     1
+#define btnDOWN   2
+#define btnLEFT   3
+#define btnSELECT 4
+#define btnNONE   5
+#define ssrPin             2//6
+#define spi_miso           11//5
+#define tc_cs              12//4
+#define spi_sck            13//3
+#define lcdRsPin           8//9
+#define lcdEPin            9//10
+#define lcdD4Pin           4//A5
+#define lcdD5Pin           5//A4
+#define lcdD6Pin           6//A3
+#define lcdD7Pin           7//A2
+#define ledRedPin          A1//8
+#define buzzerPin          A2//7
+#define switchPin          A0
+#define lcdBrightnessPin   10
+#elif defined(VERSION_2_ZERO)
+#define ssrPin             8
+#define spi_miso           12
+#define tc_cs              A1 //TBC
+#define spi_sck            13
+#define lcdRsPin           2
+#define lcdEPin            3
+#define lcdD4Pin           4
+#define lcdD5Pin           5
+#define lcdD6Pin           6
+#define lcdD7Pin           7
+#define ledRedPin          9
+#define buzzerPin          A2 //TBC
+#define switchPin          A0
 #else
-  #define ssrPin             6
-  #define thermocoupleSOPin  5
-  #define thermocoupleCSPin  4
-  #define thermocoupleCLKPin 3
-  #define lcdRsPin           9
-  #define lcdEPin            10
-  #define lcdD4Pin           A5
-  #define lcdD5Pin           A4
-  #define lcdD6Pin           A3
-  #define lcdD7Pin           A2
-  #define ledRedPin          8
-  #define buzzerPin          7
-  #define switchPin          A0
+#define ssrPin             6
+#define spi_miso           5
+#define tc_cs              4
+#define spi_sck            3
+#define lcdRsPin           9
+#define lcdEPin            10
+#define lcdD4Pin           A5
+#define lcdD5Pin           A4
+#define lcdD6Pin           A3
+#define lcdD7Pin           A2
+#define ledRedPin          8
+#define buzzerPin          7
+#define switchPin          A0
 #endif
 int data = 0;
 
@@ -176,12 +212,14 @@ unsigned long nextRead;
 unsigned long timerSoak;
 unsigned long buzzerPeriod;
 
-// ***** PID AUTOTUNE VARIABLES *****
-byte ATuneModeRemember=2;
-#define aTuneStep        1000
-#define aTuneNoise       1
-#define aTuneStartValue 1000;
-unsigned int aTuneLookBack = 2;
+#ifdef AUTOTUNE_BETA
+  // ***** PID AUTOTUNE VARIABLES *****
+  byte ATuneModeRemember = 2;
+  #define aTuneStep        1000
+  #define aTuneNoise       1
+  #define aTuneStartValue 1000;
+  unsigned int aTuneLookBack = 2;
+#endif
 
 // Reflow oven controller state machine state variable
 reflowState_t reflowState;
@@ -197,20 +235,25 @@ int checkTemperature = 0;
 bool endOfPrevProcess = false;
 
 int TEMPERATURE_PREHEAT_MIN = 40;
-int TEMPERATURE_SOAK_MIN = 150;
-int TEMPERATURE_SOAK_MAX = 177;
+int TEMPERATURE_SOAK_MIN = 145;
+int TEMPERATURE_SOAK_MAX = 180;
 int TEMPERATURE_REFLOW_MAX = 230;
+
+#define SOAK_TARGET_DURATION 60
+const int SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * SOAK_MICRO_PERIOD / SOAK_TARGET_DURATION;
 
 String type = "";
 
 // ***** DEFINING OBJECTS *****
 // Specify PID control interface
 PID reflowOvenPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);
-PID_ATune aTune(&input, &output);
+#ifdef AUTOTUNE_BETA
+  PID_ATune aTune(&input, &output);
+#endif
 
 // Specify LCD interface
 LiquidCrystal lcd(lcdRsPin, lcdEPin, lcdD4Pin, lcdD5Pin, lcdD6Pin, lcdD7Pin);
-Adafruit_MAX31855 thermocouple(thermocoupleCLKPin, thermocoupleCSPin, thermocoupleSOPin);
+Adafruit_MAX31855 thermocouple(spi_sck, tc_cs, spi_miso);
 
 void setup()
 {
@@ -236,12 +279,18 @@ void setup()
   lcd.clear();
   lcd.print("GFE Hand Made");
   lcd.setCursor(0, 1);
-  lcd.print("Reflow Oven 1.2");
+  lcd.print("Reflow Oven 2.0b");
 
   // Serial communication at 57600 bps
   Serial.begin(57600);
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
+
+  // Ethernet communication initialization
+#ifdef USE_ETHERNET
+  Ethernet.begin(mac, ip);
+  server.begin();
+#endif
 
   // Turn off LED (active low)
   digitalWrite(ledRedPin, LOW);
@@ -256,14 +305,18 @@ void setup()
   nextRead = millis();
   reflowState = REFLOW_STATE_IDLE;
 
-  #ifdef USE_LCD_KEYPAD_SHIELD
-    pinMode(lcdBrightnessPin, OUTPUT);
-    analogWrite(lcdBrightnessPin, 125);
-  #endif
+#ifdef USE_LCD_KEYPAD_SHIELD
+  pinMode(lcdBrightnessPin, OUTPUT);
+  analogWrite(lcdBrightnessPin, 125);
+#endif
 }
 
 void loop()
 {
+#ifdef USE_ETHERNET
+  client = server.available();
+#endif
+
   // Current time
   unsigned long now;
 
@@ -295,16 +348,29 @@ void loop()
       digitalWrite(ledRedPin, !(digitalRead(ledRedPin)));
       // Increase seconds timer for reflow curve analysis
       timerSeconds++;
-      
+
       // Send temperature and time stamp to serial as csv standard
       String dataToSend = "(" + (String)timerSeconds + "," + (String)setpoint + "," + (String)input + "," + (String)output + ")";
-      char* buf = (char*) malloc(sizeof(char)*dataToSend.length()+1);
+      //char* buf = (char*) malloc(sizeof(char) * dataToSend.length() + 1);
 
-      dataToSend.toCharArray(buf, dataToSend.length()+1);
+     // dataToSend.toCharArray(buf, dataToSend.length() + 1);
+
+#ifndef USE_ETHERNET
+      char* buf = (char*) malloc(sizeof(char) * dataToSend.length() + 1);
+
+      dataToSend.toCharArray(buf, dataToSend.length() + 1);
       Serial.println(buf);
 
       // Freeing the memory;
       free(buf);
+#else
+      if (client.connected())
+      {
+        client.print(dataToSend);
+      }
+#endif
+
+      
     }
     else
     {
@@ -321,7 +387,7 @@ void loop()
       // Print Stop Button
       lcd.setCursor(0, 1);
       lcd.print("stop");
-      lcd.setCursor(6,1);
+      lcd.setCursor(6, 1);
       lcd.print(timerSeconds);
       lcd.print(" s");
     }
@@ -329,11 +395,11 @@ void loop()
     {
       lcd.print("start");
       lcd.setCursor(0, 1);
-      #ifdef USE_LCD_KEYPAD_SHIELD
-        lcd.print("menu");
-      #else
-        lcd.print("prSet");
-      #endif
+#ifdef USE_LCD_KEYPAD_SHIELD
+      lcd.print("menu");
+#else
+      lcd.print("prSet");
+#endif
     }
 
     // Print current system state
@@ -353,13 +419,13 @@ void loop()
       // Print current temperature
       lcd.print(input);
 
-      #if ARDUINO >= 100
-        // Print degree Celsius symbol
-        lcd.write((uint8_t)0);
-      #else
-        // Print degree Celsius symbol
-        lcd.print(0, BYTE);
-      #endif
+#if ARDUINO >= 100
+      // Print degree Celsius symbol
+      lcd.write((uint8_t)0);
+#else
+      // Print degree Celsius symbol
+      lcd.print(0, BYTE);
+#endif
       lcd.print("C ");
     }
   }
@@ -377,13 +443,26 @@ void loop()
       else
       {
         // If switch is pressed to start reflow process
+         char dataIn[100] = {""};
+#ifndef USE_ETHERNET
         if (Serial.available() > 0)
         {
           //Leggo la stringa in arrivo dalla seriale.
-          char dataIn[100] = {""};
+          //char dataIn[100] = {""};
           Serial.readBytes(dataIn, 100);
           String receivedString(dataIn);
           data = dataIn[0];
+#else
+        if (client.connected() && client.available())
+        {
+          String receivedString = "";
+          while (client.available())
+          {
+            char c = client.read();
+            receivedString = receivedString + c;
+          }
+          Serial.println("Received string: " + receivedString);
+#endif
           //Serial.println("1 dataIn[0] = " + data);
 
           int iniPac = receivedString.indexOf('(');
@@ -394,19 +473,19 @@ void loop()
           if (iniPac != -1 && endPac != -1 && endPac - iniPac > 1)
           {
             String packetIn = receivedString;
-            packetIn = packetIn.substring(iniPac+1, endPac); //tolgo le parentesi
+            packetIn = packetIn.substring(iniPac + 1, endPac); //tolgo le parentesi
 
-            int valoriIn[3] = {-100};
-            for (int i=0; packetIn.indexOf(',') != -1; i++)
+            int valoriIn[3] = { -100};
+            for (int i = 0; packetIn.indexOf(',') != -1; i++)
             {
               int index = packetIn.indexOf(',');
               valoriIn[i] = packetIn.substring(0, index).toInt();
-              packetIn = packetIn.substring(index+1, packetIn.length());
+              packetIn = packetIn.substring(index + 1, packetIn.length());
             }
 
             TEMPERATURE_SOAK_MIN =    valoriIn[0];
             TEMPERATURE_SOAK_MAX =    valoriIn[1];
-            TEMPERATURE_REFLOW_MAX =  valoriIn[2];
+            TEMPERATURE_REFLOW_MAX =  valoriIn[2]; 
 
             type = " [C]";
             sendProfile();
@@ -414,21 +493,25 @@ void loop()
 
           else
           {
+#ifndef USE_ETHERNET
             data = dataIn[0];
+#else
+            data = receivedString.toInt();
+#endif
             //Serial.println("2 dataIn[0] = " + data);
           }
         }
-        
+
         if (analogRead(switchPin) < 30 || data == 10)
         {
           data = 0;
-          #ifdef USE_LCD_KEYPAD_SHIELD
-            delay(200);
-          #endif
+#ifdef USE_LCD_KEYPAD_SHIELD
+          delay(200);
+#endif
 
-          if(TEMPERATURE_SOAK_MIN < 50)
+          if (TEMPERATURE_SOAK_MIN < 50)
             profileSet();
-            
+
           //Saving data for heating check:
           checkTemperature = thermocouple.readCelsius();
           timeToCheck = 20;
@@ -439,7 +522,7 @@ void loop()
           //{
           //  digitalWrite(ssrPin, HIGH);
           //}
-          
+
 
           // Ora mando l'header per il file CSV
           Serial.println("Time Setpoint Input Output");
@@ -454,14 +537,18 @@ void loop()
           reflowOvenPID.SetMode(AUTOMATIC);
           // Proceed to preheat stage
           reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
+#ifndef ETH_DEBUG
           reflowState = REFLOW_STATE_PRIOR; //prior heating to heat up the quartz elements
-          //reflowState = REFLOW_STATE_PREHEAT;
+#else
+          reflowState = REFLOW_STATE_PREHEAT;
+#endif
         }
+#ifdef AUTOTUNE_BETA
         else if (data == 35) //tuning preheat code = # -> ASCII: 35
         {
           data = 0;
           lcd.clear();
-          lcd.setCursor(0,0);
+          lcd.setCursor(0, 0);
           lcd.print("TUNING PREHEAT");
           // Intialize seconds timer for serial debug information
           timerSeconds = 0;
@@ -472,22 +559,23 @@ void loop()
           reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
 
           //Setting autotuner:
-          output=aTuneStartValue;
+          output = aTuneStartValue;
           aTune.SetNoiseBand(aTuneNoise);
           aTune.SetOutputStep(aTuneStep);
           aTune.SetLookbackSec((int)aTuneLookBack);
           AutoTuneHelper(true);
-          type = " [PH]";
+          type = " [PH]";          
 
           //Going to autotuner mode:
           reflowState = REFLOW_STATE_TUNING_PH;
         }
+#endif
       }
       break;
 
     case REFLOW_STATE_PRIOR:
       reflowStatus = REFLOW_STATUS_ON;
-      if(input >= TEMPERATURE_PREHEAT_MIN)
+      if (input >= TEMPERATURE_PREHEAT_MIN)
       {
         reflowState = REFLOW_STATE_PREHEAT;
       }
@@ -502,7 +590,8 @@ void loop()
         // Set less agressive PID parameters for soaking ramp
         reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
         // Ramp up to first section of soaking temperature
-        setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;
+        /*setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;*/
+        setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP_INT;
         // Proceed to soaking state
         reflowState = REFLOW_STATE_SOAK;
       }
@@ -514,7 +603,8 @@ void loop()
       {
         timerSoak = millis() + SOAK_MICRO_PERIOD;
         // Increment micro setpoint
-        setpoint += SOAK_TEMPERATURE_STEP;
+        /*setpoint += SOAK_TEMPERATURE_STEP;*/
+        setpoint += SOAK_TEMPERATURE_STEP_INT;
         if (setpoint > TEMPERATURE_SOAK_MAX)
         {
           // Set agressive PID parameters for reflow ramp
@@ -559,16 +649,16 @@ void loop()
       // Process ended. Display time and sound song.
       lcd.clear();
       lcd.print("REFLOW DONE!");
-      lcd.setCursor(0,1);
+      lcd.setCursor(0, 1);
       lcd.print("time: ");
-      lcd.setCursor(11,1);
+      lcd.setCursor(11, 1);
       lcd.print(timerSeconds);
       lcd.print(" s");
       soundComplete();
-      
+
       // Reflow process ended
       reflowState = REFLOW_STATE_IDLE;
-    break;
+      break;
 
     case REFLOW_STATE_TOO_HOT:
       // If oven temperature drops below room temperature
@@ -593,11 +683,12 @@ void loop()
         reflowState = REFLOW_STATE_IDLE;
       }
       break;
-
-   case REFLOW_STATE_TUNING_PH:
+      
+#ifdef AUTOTUNE_BETA
+    case REFLOW_STATE_TUNING_PH:
       reflowStatus = REFLOW_STATUS_ON;
 
-      if(timerSeconds > 180)
+      if (timerSeconds > 180)
       {
         reflowStatus = REFLOW_STATUS_OFF;
         reflowState  = REFLOW_STATE_IDLE;
@@ -605,14 +696,14 @@ void loop()
         lcd.print("ERROR, aborting");
         soundError();
       }
-      
+
       byte val = (aTune.Runtime());
-      if (val!=0)
+      if (val != 0)
       {
         kp = aTune.GetKp();
         ki = aTune.GetKi();
         kd = aTune.GetKd();
-        reflowOvenPID.SetTunings(kp,ki,kd);
+        reflowOvenPID.SetTunings(kp, ki, kd);
 
         //Turn off autotune
         aTune.Cancel();
@@ -626,20 +717,21 @@ void loop()
         lcd.print("DONE");
         lcd.print(" ");
         lcd.print(kp);
-        lcd.setCursor(0,1);
+        lcd.setCursor(0, 1);
         lcd.print(ki);
         delay(1000);
       }
-   break;
+      break;
+#endif      
   }
 
   // If switch 1 is pressed
   if (Serial.available() > 0) data = Serial.read();
   if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == 100)
   {
-    #ifdef USE_LCD_KEYPAD_SHIELD
-      delay(200);
-    #endif
+#ifdef USE_LCD_KEYPAD_SHIELD
+    delay(200);
+#endif
     data = 0;
     // If currently reflow process is on going
     if (reflowStatus == REFLOW_STATUS_ON)
@@ -651,12 +743,12 @@ void loop()
       reflowState = REFLOW_STATE_IDLE;
     }
     else
-      #ifdef USE_LCD_KEYPAD_SHIELD
-        delay(200);
-        menu_page();
-     #else
-        profileSet();
-     #endif
+#ifdef USE_LCD_KEYPAD_SHIELD
+      delay(200);
+    menu_page();
+#else
+      profileSet();
+#endif
   }
   else if (data == 36)
   {
@@ -677,18 +769,18 @@ void loop()
         reflowState = REFLOW_STATE_IDLE;
         lcd.clear();
         lcd.print("ERROR  check");
-        lcd.setCursor(0,1);
+        lcd.setCursor(0, 1);
         lcd.print("Power or SSR");
         soundError();
       }
-      
-      timeToCheck = timerSeconds+20;
+
+      timeToCheck = timerSeconds + 20;
       checkTemperature = input + 0.5;
     }
-    
+
     now = millis();
 
-    if(reflowState != REFLOW_STATE_TUNING_PH)
+    if (reflowState != REFLOW_STATE_TUNING_PH)
       reflowOvenPID.Compute();
 
     if ((now - windowStartTime) > windowSize)
