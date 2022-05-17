@@ -4,7 +4,7 @@ This repo contains all the files of my Arduino Zero (samd21) based Reflow Oven P
 * Author: Giacomo Mammarella
 * email: mammarella.@gmail.com,
 
-# For Arduino Nano (V1.1) refer to master branch
+# For Arduino Nano (V1.1) refer to appropriate branch
 
 # File list:
 * [Arduino files](https://github.com/giacu92/Reflow-Oven-Controller/tree/master/GFE_Reflow_Oven_Controller): The Arduino files source folder.
