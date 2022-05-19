@@ -4,6 +4,10 @@ This repo contains all the files of my Arduino Zero (samd21) based Reflow Oven P
 * Author: Giacomo Mammarella
 * email: mammarella.@gmail.com,
 
+![New](https://iili.io/WwUWf2.png)
+
+[Check the live version!](https://a360.co/3yNSDE0)
+
 # For Arduino Nano (V1.1) refer to appropriate branch
 
 # File list:
@@ -16,7 +20,7 @@ This repo contains all the files of my Arduino Zero (samd21) based Reflow Oven P
 Get a fully assembled board [here](http://giacu92.bigcartel.com/product/reflow-oven-controller-board-v1-1) or etch it yourself. -- available soon
 
 A newer version of the pcb featuring two thermocouple interface, +12V fan output (for cooling) is under development. It will fit the 16x2 LCD screen and mounts underneath it. Here's a sample rendering. Also a new pid autotuner function and MicroSD card interface for saving custom profiles are getting implemented.
-![New](https://iili.io/WwUWf2.png)
+
 ![New_top](https://iili.io/WwUZzJ.png)
 
 This project is under continuous update (May 2022). Contact me for anything :)
