@@ -2,7 +2,7 @@
 This repo contains all the files of my Arduino Zero (samd21) based Reflow Oven PID Controller for reflow smd soldering.
 
 * Author: Giacomo Mammarella
-* email: mammarella.@gmail.com,
+* email: giacu92@gmail.com,
 
 ![New](https://iili.io/WwUWf2.png)
 
