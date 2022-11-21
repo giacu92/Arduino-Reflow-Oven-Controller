@@ -194,3 +194,38 @@
     return val;
   }
 #endif
+
+byte updateTempSimulator()
+{
+  //Leggo la stringa in arrivo dalla seriale.
+  char dataIn[100] = {""};
+  Serial.readBytes(dataIn, 100);
+  String receivedString(dataIn);
+  data = dataIn[0];
+  //Serial.println("Received string: " + receivedString);
+
+  int iniPac = receivedString.indexOf('(');
+  int endPac = receivedString.indexOf(')');
+
+  //se ci sono i caratteri di inizio e fine pacchetto è un messaggio,
+  //altrimenti ho ricevuto solo un dato da inserire in data.
+  if (iniPac != -1 && endPac != -1 && endPac - iniPac > 1)
+  {
+    String packetIn = receivedString;
+    packetIn = packetIn.substring(iniPac + 1, endPac); //tolgo le parentesi
+
+    // Simulator support
+    if (receivedString.indexOf("[S],") >= 0)
+    {
+      //Serial.println("flag");
+      isSimulation = true;
+      // Override temps
+      input = packetIn.substring(4, packetIn.length()).toDouble();
+      return 0;
+    }
+  }
+  else
+  {
+    return data;
+  }
+}

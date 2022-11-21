@@ -34,7 +34,6 @@ void menu_page()
 
 void profileSet()
 {
-   
   lcd.clear();
   lcd.setCursor(0,0);
   lcd.print("Lead-free paste?");
@@ -81,6 +80,8 @@ void profileSet()
     type = " [LF]";
   }
 
+  SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
+
   data = 0;
   delay(1000);
   
@@ -89,16 +90,27 @@ void profileSet()
 
 void sendProfile()
 {
+#if defined FINE_CONTROL
+  String dataToSend =
+    "(" + type + ","
+        + TEMPERATURE_SOAK_MIN      + ","
+        + TEMPERATURE_SOAK_MAX      + ","
+        + TEMPERATURE_REFLOW_MAX    + ","
+        + PH_TARGET_DURATION        + ","
+        + SOAK_TARGET_DURATION      + ","
+        + REFLOW_RU_TARGET_DURATION + ")";
+#else
   String dataToSend =
     "(" + type + ","
         + TEMPERATURE_SOAK_MIN   + ","
         + TEMPERATURE_SOAK_MAX   + ","
         + TEMPERATURE_REFLOW_MAX + ")";
+#endif
 
 #ifndef USE_ETHERNET
   char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
   dataToSend.toCharArray(buf, dataToSend.length()+1);
-  Serial.println(buf);
+  //Serial.println(buf);
   free(buf);
 #else
   client.print(dataToSend);

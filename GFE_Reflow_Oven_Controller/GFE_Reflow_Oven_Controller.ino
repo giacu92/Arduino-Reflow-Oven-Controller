@@ -11,6 +11,16 @@
              - Added sounds.
              - Added temperature self check. The process self stops if unable to drive the oven.
 
+   2.0       Arduino Zero (reflowZero board)
+             - Added second thermocouple (#ifdef USE_TC2)
+             - To be Added: error code register
+                e.g.:
+                    15  14  13  12  11  10  09  08  07  06  05  04  03  02  01  00             
+                    -   -   tc2 tc1 ip   -   -   -   -   -   -   -   -   -   -   -
+
+                    tc1/2: connected tc
+                    ip: ip address acquired 
+    
    Temperature (Degree Celcius)                 Magic Happens Here!
    245-|                                               x  x
        |                                            x        x
@@ -42,11 +52,23 @@
 
 //#define USE_LCD_KEYPAD_SHIELD
 //#define VERSION_2_ZERO
+#define FINE_CONTROL
+#define OVEN_SIMULATOR
+#define NOPRIOR_HEAT
 
-//#define ETH_DEBUG
+#ifdef VERSION_2_ZERO
+  #undef USE_LCD_KEYPAD_SHIELD
+  #define USE_TC2
+  #define USE_ETHERNET
+  #define USE_SERVO
+#endif
 
-//#define USE_ETHERNET
-#define AUTOTUNE_BETA
+#ifdef USE_SERVO
+  #include <Servo.h>
+  Servo servoMotor;
+#endif
+
+//#define AUTOTUNE_BETA
 
 // ***** TCP IP CONFIG *****
 #ifdef USE_ETHERNET
@@ -70,7 +92,7 @@
 #define TEMPERATURE_COOL_MIN 100
 #define SENSOR_SAMPLING_TIME 1000
 #define SOAK_TEMPERATURE_STEP 2
-#define SOAK_MICRO_PERIOD 10000 /*7000*/
+#define SOAK_MICRO_PERIOD 1000 /*7000*/
 #define DEBOUNCE_PERIOD_MIN 50
 
 
@@ -78,7 +100,7 @@
 // Pre-Heating:
 #define PID_KP_PREHEAT 60    //100
 #define PID_KI_PREHEAT 0.05    //0.025
-#define PID_KD_PREHEAT 20    //20
+#define PID_KD_PREHEAT 50    //20
 // Soaking:
 #define PID_KP_SOAK 100  //300
 #define PID_KI_SOAK 0.05       //0.05
@@ -88,8 +110,14 @@
 #define PID_KI_REFLOW  0.10    //0.05
 #define PID_KD_REFLOW  350    //350
 
+#ifdef USE_SERVO
+  #define PID_KP_COOL 20
+  #define PID_KI_COOL 0.5
+  #define PID_KD_COOL 50
+#endif
+
 // Sample time:
-#define PID_SAMPLE_TIME 1000
+#define PID_SAMPLE_TIME 250
 
 // Notes:
 #define  note_c     261 //Hz
@@ -147,54 +175,55 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
 
 // ***** PIN ASSIGNMENT *****
 #if defined(USE_LCD_KEYPAD_SHIELD)
-#define btnRIGHT  0
-#define btnUP     1
-#define btnDOWN   2
-#define btnLEFT   3
-#define btnSELECT 4
-#define btnNONE   5
-#define ssrPin             2//6
-#define spi_miso           11//5
-#define tc_cs              12//4
-#define spi_sck            13//3
-#define lcdRsPin           8//9
-#define lcdEPin            9//10
-#define lcdD4Pin           4//A5
-#define lcdD5Pin           5//A4
-#define lcdD6Pin           6//A3
-#define lcdD7Pin           7//A2
-#define ledRedPin          A1//8
-#define buzzerPin          A2//7
-#define switchPin          A0
-#define lcdBrightnessPin   10
+  #define btnRIGHT  0
+  #define btnUP     1
+  #define btnDOWN   2
+  #define btnLEFT   3
+  #define btnSELECT 4
+  #define btnNONE   5
+  #define ssrPin             2//6
+  #define spi_miso           11//5
+  #define tc_cs              12//4
+  #define spi_sck            13//3
+  #define lcdRsPin           8//9
+  #define lcdEPin            9//10
+  #define lcdD4Pin           4//A5
+  #define lcdD5Pin           5//A4
+  #define lcdD6Pin           6//A3
+  #define lcdD7Pin           7//A2
+  #define ledRedPin          A1//8
+  #define buzzerPin          A2//7
+  #define switchPin          A0
+  #define lcdBrightnessPin   10
 #elif defined(VERSION_2_ZERO)
-#define ssrPin             8
-#define spi_miso           12
-#define tc_cs              A1 //TBC
-#define spi_sck            13
-#define lcdRsPin           2
-#define lcdEPin            3
-#define lcdD4Pin           4
-#define lcdD5Pin           5
-#define lcdD6Pin           6
-#define lcdD7Pin           7
-#define ledRedPin          9
-#define buzzerPin          A2 //TBC
-#define switchPin          A0
+  #define ssrPin             8
+  #define spi_miso           12
+  #define tc_cs              A1 //TBC
+  #define tc2_cs             A2 //TBC
+  #define spi_sck            13
+  #define lcdRsPin           2
+  #define lcdEPin            3
+  #define lcdD4Pin           4
+  #define lcdD5Pin           5
+  #define lcdD6Pin           6
+  #define lcdD7Pin           7
+  #define ledRedPin          9
+  #define buzzerPin          A2 //TBC
+  #define switchPin          A0
 #else
-#define ssrPin             6
-#define spi_miso           5
-#define tc_cs              4
-#define spi_sck            3
-#define lcdRsPin           9
-#define lcdEPin            10
-#define lcdD4Pin           A5
-#define lcdD5Pin           A4
-#define lcdD6Pin           A3
-#define lcdD7Pin           A2
-#define ledRedPin          8
-#define buzzerPin          7
-#define switchPin          A0
+  #define ssrPin             6
+  #define spi_miso           5
+  #define tc_cs              4
+  #define spi_sck            3
+  #define lcdRsPin           9
+  #define lcdEPin            10
+  #define lcdD4Pin           A5
+  #define lcdD5Pin           A4
+  #define lcdD6Pin           A3
+  #define lcdD7Pin           A2
+  #define ledRedPin          8
+  #define buzzerPin          7
+  #define switchPin          A0
 #endif
 int data = 0;
 
@@ -205,12 +234,16 @@ double output;
 double kp = PID_KP_PREHEAT;
 double ki = PID_KI_PREHEAT;
 double kd = PID_KD_PREHEAT;
-const int windowSize = 2000;
+const int windowSize = 500; /*2000;*/
 unsigned long windowStartTime;
 unsigned long nextCheck;
 unsigned long nextRead;
 unsigned long timerSoak;
 unsigned long buzzerPeriod;
+
+#ifdef USE_SERVO
+  double position;
+#endif
 
 #ifdef AUTOTUNE_BETA
   // ***** PID AUTOTUNE VARIABLES *****
@@ -239,10 +272,21 @@ int TEMPERATURE_SOAK_MIN = 145;
 int TEMPERATURE_SOAK_MAX = 180;
 int TEMPERATURE_REFLOW_MAX = 230;
 
-#define SOAK_TARGET_DURATION 60
-const int SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * SOAK_MICRO_PERIOD / SOAK_TARGET_DURATION;
+#ifdef FINE_CONTROL
+  int PH_TARGET_DURATION = 60;
+  double PH_TEMPERATURE_STEP_D = (TEMPERATURE_SOAK_MIN - TEMPERATURE_PREHEAT_MIN) * (double)SOAK_MICRO_PERIOD / (double)PH_TARGET_DURATION / 1000;
+
+  int REFLOW_RU_TARGET_DURATION = 40; //Reflow Ramp-Up target duration
+  double REFLOW_TEMPERATURE_STEP_D = (TEMPERATURE_REFLOW_MAX - TEMPERATURE_SOAK_MAX) * (double)SOAK_MICRO_PERIOD / (double)REFLOW_RU_TARGET_DURATION / 1000;
+#endif
+
+int SOAK_TARGET_DURATION = 90;
+double SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
 
 String type = "";
+
+//Simulator
+bool isSimulation = false;
 
 // ***** DEFINING OBJECTS *****
 // Specify PID control interface
@@ -250,10 +294,17 @@ PID reflowOvenPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 #ifdef AUTOTUNE_BETA
   PID_ATune aTune(&input, &output);
 #endif
+#ifdef USE_SERVO
+  PID coolingPID(&input, &position, &setpoint, kp, ki, kd, DIRECT);
+#endif
 
 // Specify LCD interface
 LiquidCrystal lcd(lcdRsPin, lcdEPin, lcdD4Pin, lcdD5Pin, lcdD6Pin, lcdD7Pin);
 Adafruit_MAX31855 thermocouple(spi_sck, tc_cs, spi_miso);
+
+#ifdef USE_TC2
+  Adafruit_MAX31855 tc2(spi_sck, tc2_cs, spi_miso);
+#endif
 
 void setup()
 {
@@ -273,6 +324,16 @@ void setup()
   reflowOvenPID.SetOutputLimits(0, windowSize);
   reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
 
+  // V2.0b -- Servo cooling
+  #ifdef USE_SERVO
+    servoMotor.attach(A0);
+
+    coolingPID.SetOutputLimits(0, 255);
+    coolingPID.SetSampleTime(PID_SAMPLE_TIME);
+
+    servoMotor.write(0);
+  #endif
+  
   // Start-up splash
   lcd.begin(16, 2);
   lcd.createChar(0, degree);
@@ -309,6 +370,12 @@ void setup()
   pinMode(lcdBrightnessPin, OUTPUT);
   analogWrite(lcdBrightnessPin, 125);
 #endif
+
+#ifdef FINE_CONTROL
+  Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
+  Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
+  Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
+#endif
 }
 
 void loop()
@@ -325,8 +392,21 @@ void loop()
   {
     // Read thermocouple next sampling period
     nextRead += SENSOR_SAMPLING_TIME;
-    // Read current temperature
-    input = thermocouple.readCelsius();
+    
+    if (!isSimulation)
+    {
+      // Read current temperature
+      input = thermocouple.readCelsius();
+      #ifdef USE_TC2
+        double in_tc2 = tc2.readCelsius();
+        if (!isnan(in_tc2))   { input = (input + in_tc2) / 2.0; }   //average value of the two tc
+      #endif
+      //Serial.println("TC input = " + (String)input);
+    }
+    else
+    {
+      //Serial.println("Simulator input = " + (String)input);
+    }
 
     // If thermocouple problem detected
     if (isnan(input))
@@ -443,7 +523,7 @@ void loop()
       else
       {
         // If switch is pressed to start reflow process
-         char dataIn[100] = {""};
+        char dataIn[100] = {""};
 #ifndef USE_ETHERNET
         if (Serial.available() > 0)
         {
@@ -452,6 +532,7 @@ void loop()
           Serial.readBytes(dataIn, 100);
           String receivedString(dataIn);
           data = dataIn[0];
+          //Serial.println("Received string: " + receivedString);
 #else
         if (client.connected() && client.available())
         {
@@ -461,7 +542,7 @@ void loop()
             char c = client.read();
             receivedString = receivedString + c;
           }
-          Serial.println("Received string: " + receivedString);
+          //Serial.println("Received string: " + receivedString);
 #endif
           //Serial.println("1 dataIn[0] = " + data);
 
@@ -475,20 +556,49 @@ void loop()
             String packetIn = receivedString;
             packetIn = packetIn.substring(iniPac + 1, endPac); //tolgo le parentesi
 
-            int valoriIn[3] = { -100};
-            for (int i = 0; packetIn.indexOf(',') != -1; i++)
+            // Simulator support
+            if (receivedString.indexOf("[S],") >= 0)
             {
-              int index = packetIn.indexOf(',');
-              valoriIn[i] = packetIn.substring(0, index).toInt();
-              packetIn = packetIn.substring(index + 1, packetIn.length());
+              //Serial.println("flag");
+              isSimulation = true;
+              // Override temps
+              input = packetIn.substring(4, packetIn.length()).toDouble();
             }
+            else
+            {
 
-            TEMPERATURE_SOAK_MIN =    valoriIn[0];
-            TEMPERATURE_SOAK_MAX =    valoriIn[1];
-            TEMPERATURE_REFLOW_MAX =  valoriIn[2]; 
+#if defined FINE_CONTROL
+              int lastVal = 7;
+#else
+              int lastVal = 4;
+#endif
+              int valoriIn[lastVal] = { -100};
+              for (int i = 0; packetIn.indexOf(',') != -1; i++)
+              {
+                int index = packetIn.indexOf(',');
+                valoriIn[i] = packetIn.substring(0, index).toInt();
+                packetIn = packetIn.substring(index + 1, packetIn.length());
+              }
+              valoriIn[lastVal-1] = packetIn.substring(0,packetIn.length()).toInt();
 
-            type = " [C]";
-            sendProfile();
+              TEMPERATURE_SOAK_MIN =    valoriIn[0];
+              TEMPERATURE_SOAK_MAX =    valoriIn[1];
+              TEMPERATURE_REFLOW_MAX =  valoriIn[2];
+              //TEMPERATURE_COOL_MIN =    valoriIn[3];
+
+#if defined FINE_CONTROL
+              PH_TARGET_DURATION        = valoriIn[4];
+              SOAK_TARGET_DURATION      = valoriIn[5];
+              REFLOW_RU_TARGET_DURATION = valoriIn[6];  
+
+              PH_TEMPERATURE_STEP_D = (TEMPERATURE_SOAK_MIN - TEMPERATURE_PREHEAT_MIN) * (double)SOAK_MICRO_PERIOD / (double)PH_TARGET_DURATION / 1000;
+              REFLOW_TEMPERATURE_STEP_D = (TEMPERATURE_REFLOW_MAX - TEMPERATURE_SOAK_MAX) * (double)SOAK_MICRO_PERIOD / (double)REFLOW_RU_TARGET_DURATION / 1000;
+#endif
+              SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
+
+              type = " [C]";
+              sendProfile();
+            }
           }
 
           else
@@ -514,6 +624,10 @@ void loop()
 
           //Saving data for heating check:
           checkTemperature = thermocouple.readCelsius();
+#ifdef USE_TC2
+          double in_tc2 = tc2.readCelsius();
+          if (!isnan(in_tc2))   { checkTemperature = (checkTemperature + in_tc2) / 2.0; }   //average value of the two tc
+#endif
           timeToCheck = 20;
           // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
           sendProfile();
@@ -523,7 +637,6 @@ void loop()
           //  digitalWrite(ssrPin, HIGH);
           //}
 
-
           // Ora mando l'header per il file CSV
           Serial.println("Time Setpoint Input Output");
           // Intialize seconds timer for serial debug information
@@ -531,16 +644,25 @@ void loop()
           timerSeconds = 0;
           // Initialize PID control window starting time
           windowStartTime = millis();
-          // Ramp up to minimum soaking temperature
-          setpoint = TEMPERATURE_SOAK_MIN;
+#ifndef FINE_CONTROL
+            // Ramp up to minimum soaking temperature
+            setpoint = TEMPERATURE_SOAK_MIN;
+#else
+            setpoint = TEMPERATURE_PREHEAT_MIN + PH_TEMPERATURE_STEP_D;
+#endif
           // Turn the PID on
           reflowOvenPID.SetMode(AUTOMATIC);
           // Proceed to preheat stage
           reflowOvenPID.SetTunings(PID_KP_PREHEAT, PID_KI_PREHEAT, PID_KD_PREHEAT);
-#ifndef ETH_DEBUG
-          reflowState = REFLOW_STATE_PRIOR; //prior heating to heat up the quartz elements
-#else
+#if defined ETH_DEBUG
           reflowState = REFLOW_STATE_PREHEAT;
+#elif defined NOPRIOR_HEAT
+          reflowState = REFLOW_STATE_PREHEAT; 
+#else
+          reflowState = REFLOW_STATE_PRIOR; //prior heating to heat up the quartz elements
+#endif
+#ifdef USE_SERVO
+          servoMotor.write(0);
 #endif
         }
 #ifdef AUTOTUNE_BETA
@@ -583,7 +705,7 @@ void loop()
     case REFLOW_STATE_PREHEAT:
       reflowStatus = REFLOW_STATUS_ON;
       // If minimum soak temperature is achieve
-      if (input >= TEMPERATURE_SOAK_MIN)
+      if (input >= TEMPERATURE_SOAK_MIN - 10)
       {
         // Chop soaking period into smaller sub-period
         timerSoak = millis() + SOAK_MICRO_PERIOD;
@@ -591,10 +713,22 @@ void loop()
         reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
         // Ramp up to first section of soaking temperature
         /*setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;*/
-        setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP_INT;
+        setpoint = (double)TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP_INT;
         // Proceed to soaking state
         reflowState = REFLOW_STATE_SOAK;
       }
+#if defined FINE_CONTROL
+      else
+      {
+        if (millis() > timerSoak)
+        {
+          timerSoak = millis() + SOAK_MICRO_PERIOD;
+          // Increment micro setpoint
+          /*setpoint += SOAK_TEMPERATURE_STEP;*/
+          setpoint += PH_TEMPERATURE_STEP_D;
+        }
+      }
+#endif
       break;
 
     case REFLOW_STATE_SOAK:
@@ -628,6 +762,11 @@ void loop()
         setpoint = TEMPERATURE_COOL_MIN;
         // Proceed to cooling state
         reflowState = REFLOW_STATE_COOL;
+        #ifdef USE_SERVO
+          coolingPID.SetMode(AUTOMATIC);
+          coolingPID.SetTunings(PID_KP_COOL, PID_KI_COOL, PID_KD_COOL);
+        #endif
+
       }
 
       break;
@@ -642,7 +781,14 @@ void loop()
         reflowState = REFLOW_STATE_COMPLETE;
         endOfPrevProcess = true;
         Serial.print("eof");
+
+        #ifdef USE_SERVO
+          servoMotor.write(255);
+        #endif
       }
+      #ifdef USE_SERVO
+        coolingPID.Compute();
+      #endif
       break;
 
     case REFLOW_STATE_COMPLETE:
@@ -726,7 +872,11 @@ void loop()
   }
 
   // If switch 1 is pressed
-  if (Serial.available() > 0) data = Serial.read();
+  if (Serial.available() > 0) 
+  {
+    data = updateTempSimulator();
+    //data = Serial.read();
+  }  
   if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == 100)
   {
 #ifdef USE_LCD_KEYPAD_SHIELD
@@ -787,6 +937,12 @@ void loop()
     {
       // Time to shift the Relay Window
       windowStartTime += windowSize;
+      #ifdef USE_SERVO
+        if (reflowState == REFLOW_STATE_COOL)
+        {
+          servoMotor.write(position);
+        }
+      #endif
     }
     if (output > (now - windowStartTime))
     {
