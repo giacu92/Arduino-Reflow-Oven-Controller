@@ -201,7 +201,7 @@ byte updateTempSimulator()
   char dataIn[100] = {""};
   Serial.readBytes(dataIn, 100);
   String receivedString(dataIn);
-  data = dataIn[0];
+  //data = dataIn[0];
   //Serial.println("Received string: " + receivedString);
 
   int iniPac = receivedString.indexOf('(');
@@ -226,6 +226,6 @@ byte updateTempSimulator()
   }
   else
   {
-    return data;
+    return dataIn[0];
   }
 }

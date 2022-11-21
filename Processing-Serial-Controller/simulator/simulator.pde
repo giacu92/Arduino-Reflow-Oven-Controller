@@ -8,8 +8,9 @@ private static final boolean lightDebug = true;
 
 // Simulator parameters
 static final int windowSize = 500;
-static double kFactor = 190;
-static double yFactor = 0.45;
+static double kFactor = 100;
+static double yFactor = 0.01;
+static double currentTemp = 25.0;
 
 Serial myPort;
 
@@ -131,9 +132,20 @@ void serialReceive()
           table.setFloat(n-1, "temperature", startY-new_temp);
           
           // Calcolo nuova temperatura
-          float pidValue = round(Float.valueOf(parametri[3]));
+          float pidValue = Float.valueOf(parametri[3]);
+          //println(pidValue);
           
-          double newTemp = new_temp + pidValue/Float.valueOf(windowSize)*kFactor/new_temp - (new_temp-16)*yFactor/kFactor;
+          //double newTemp = new_temp + pidValue/Float.valueOf(windowSize)*kFactor/new_temp - (new_temp-18)*yFactor/kFactor;
+          
+          double new_temp2 = new_temp*new_temp;
+          double new_temp3 = new_temp2*new_temp;
+          
+          double increment = (3.37   + 0.00378*new_temp  - 0.000115*new_temp2 + 0.000000272*new_temp3) * pidValue/Float.valueOf(windowSize) ;
+          double decrement = 0.0803 + 0.000528*new_temp + 0.0000241*new_temp2 - 0.0000000361*new_temp3;
+          
+          double newTemp = new_temp + increment - decrement;
+          
+          
           if (!lightDebug)
           {
             println("newTemp = " + newTemp);
