@@ -110,7 +110,7 @@ void sendProfile()
 #ifndef USE_ETHERNET
   char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
   dataToSend.toCharArray(buf, dataToSend.length()+1);
-  //Serial.println(buf);
+  Serial.println(buf);
   free(buf);
 #else
   client.print(dataToSend);

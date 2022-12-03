@@ -51,10 +51,9 @@
 #include <PID_v1.h>
 
 //#define USE_LCD_KEYPAD_SHIELD
-//#define VERSION_2_ZERO
+#define VERSION_2_ZERO
 #define FINE_CONTROL
-#define OVEN_SIMULATOR
-#define NOPRIOR_HEAT
+//#define NOPRIOR_HEAT
 
 #ifdef VERSION_2_ZERO
   #undef USE_LCD_KEYPAD_SHIELD
@@ -197,19 +196,19 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define lcdBrightnessPin   10
 #elif defined(VERSION_2_ZERO)
   #define ssrPin             8
-  #define spi_miso           12
-  #define tc_cs              A1 //TBC
-  #define tc2_cs             A2 //TBC
-  #define spi_sck            13
+  #define spi_miso           (22u)
+  #define tc_cs              PIN_A2 //TBC
+  #define tc2_cs             PIN_A3 //TBC
+  #define spi_sck            (24u)
   #define lcdRsPin           2
   #define lcdEPin            3
   #define lcdD4Pin           4
   #define lcdD5Pin           5
   #define lcdD6Pin           6
   #define lcdD7Pin           7
-  #define ledRedPin          9
-  #define buzzerPin          A2 //TBC
-  #define switchPin          A0
+  #define ledRedPin          13 
+  #define buzzerPin          PIN_A4 //TBC
+  #define switchPin          PIN_A1
 #else
   #define ssrPin             6
   #define spi_miso           5
@@ -300,10 +299,16 @@ PID reflowOvenPID(&input, &output, &setpoint, kp, ki, kd, DIRECT);
 
 // Specify LCD interface
 LiquidCrystal lcd(lcdRsPin, lcdEPin, lcdD4Pin, lcdD5Pin, lcdD6Pin, lcdD7Pin);
-Adafruit_MAX31855 thermocouple(spi_sck, tc_cs, spi_miso);
+
+
+#ifndef VERSION_2_ZERO
+  Adafruit_MAX31855 thermocouple(spi_sck, tc_cs, spi_miso);
+#else
+  Adafruit_MAX31855 thermocouple(tc_cs);
+#endif
 
 #ifdef USE_TC2
-  Adafruit_MAX31855 tc2(spi_sck, tc2_cs, spi_miso);
+  Adafruit_MAX31855 tc2(tc2_cs);
 #endif
 
 void setup()
@@ -324,9 +329,19 @@ void setup()
   reflowOvenPID.SetOutputLimits(0, windowSize);
   reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
 
+  // V2.0b -- Zero only
+  #if defined (VERSION_2_ZERO)
+    analogReadResolution(12);
+    pinMode(10, OUTPUT);
+    pinMode(12, OUTPUT);
+
+    digitalWrite(10, HIGH);
+    digitalWrite(12, HIGH);
+  #endif
+
   // V2.0b -- Servo cooling
-  #ifdef USE_SERVO
-    servoMotor.attach(A0);
+  #if defined USE_SERVO
+    servoMotor.attach(PIN_A0);
 
     coolingPID.SetOutputLimits(0, 255);
     coolingPID.SetSampleTime(PID_SAMPLE_TIME);
@@ -343,9 +358,14 @@ void setup()
   lcd.print("Reflow Oven 2.0b");
 
   // Serial communication at 57600 bps
-  Serial.begin(57600);
-  pinMode(13, OUTPUT);
-  digitalWrite(13, LOW);
+  #ifndef VERSION_2_ZERO
+    Serial.begin(57600);
+  #else
+    SerialUSB.begin(57600);
+    //while(!SerialUSB);
+  #endif
+  //pinMode(13, OUTPUT);
+ // digitalWrite(13, LOW);
 
   // Ethernet communication initialization
 #ifdef USE_ETHERNET
@@ -372,9 +392,15 @@ void setup()
 #endif
 
 #ifdef FINE_CONTROL
-  Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
-  Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
-  Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
+  #ifndef VERSION_2_ZERO
+      Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
+      Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
+      Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
+    #else
+      SerialUSB.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
+      SerialUSB.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
+      SerialUSB.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
+    #endif
 #endif
 }
 
@@ -399,7 +425,8 @@ void loop()
       input = thermocouple.readCelsius();
       #ifdef USE_TC2
         double in_tc2 = tc2.readCelsius();
-        if (!isnan(in_tc2))   { input = (input + in_tc2) / 2.0; }   //average value of the two tc
+        if (isnan(input))    { input = in_tc2; }
+        else if (!isnan(in_tc2))   { input = (input + in_tc2) / 2.0; }   //average value of the two tc
       #endif
       //Serial.println("TC input = " + (String)input);
     }
@@ -439,7 +466,11 @@ void loop()
       char* buf = (char*) malloc(sizeof(char) * dataToSend.length() + 1);
 
       dataToSend.toCharArray(buf, dataToSend.length() + 1);
-      Serial.println(buf);
+      #ifndef VERSION_2_ZERO
+        Serial.println(buf);
+      #else
+        SerialUSB.println(buf);
+      #endif
 
       // Freeing the memory;
       free(buf);
@@ -525,11 +556,19 @@ void loop()
         // If switch is pressed to start reflow process
         char dataIn[100] = {""};
 #ifndef USE_ETHERNET
+  #ifndef VERSION_2_ZERO
         if (Serial.available() > 0)
+  #else
+        if (SerialUSB.available() > 0)
+  #endif
         {
           //Leggo la stringa in arrivo dalla seriale.
           //char dataIn[100] = {""};
+  #ifndef VERSION_2_ZERO
           Serial.readBytes(dataIn, 100);
+  #else
+          SerialUSB.readBytes(dataIn, 100);
+  #endif
           String receivedString(dataIn);
           data = dataIn[0];
           //Serial.println("Received string: " + receivedString);
@@ -572,7 +611,7 @@ void loop()
 #else
               int lastVal = 4;
 #endif
-              int valoriIn[lastVal] = { -100};
+              int valoriIn[lastVal] = {-100};
               for (int i = 0; packetIn.indexOf(',') != -1; i++)
               {
                 int index = packetIn.indexOf(',');
@@ -638,7 +677,11 @@ void loop()
           //}
 
           // Ora mando l'header per il file CSV
+#ifndef VERSION_2_ZERO
           Serial.println("Time Setpoint Input Output");
+#else
+          SerialUSB.println("Time Setpoint Input Output");
+#endif
           // Intialize seconds timer for serial debug information
           nextCheck = millis();
           timerSeconds = 0;
@@ -705,7 +748,7 @@ void loop()
     case REFLOW_STATE_PREHEAT:
       reflowStatus = REFLOW_STATUS_ON;
       // If minimum soak temperature is achieve
-      if (input >= TEMPERATURE_SOAK_MIN - 10)
+      if (input >= TEMPERATURE_SOAK_MIN - 15)
       {
         // Chop soaking period into smaller sub-period
         timerSoak = millis() + SOAK_MICRO_PERIOD;
@@ -725,7 +768,10 @@ void loop()
           timerSoak = millis() + SOAK_MICRO_PERIOD;
           // Increment micro setpoint
           /*setpoint += SOAK_TEMPERATURE_STEP;*/
-          setpoint += PH_TEMPERATURE_STEP_D;
+          if (setpoint <= TEMPERATURE_SOAK_MIN)
+            setpoint += PH_TEMPERATURE_STEP_D;
+          else
+            setpoint = TEMPERATURE_SOAK_MIN;
         }
       }
 #endif
@@ -780,7 +826,11 @@ void loop()
         // Proceed to reflow Completion state
         reflowState = REFLOW_STATE_COMPLETE;
         endOfPrevProcess = true;
+#ifndef VERSION_2_ZERO
         Serial.print("eof");
+#else
+        Serial.print("eof");
+#endif
 
         #ifdef USE_SERVO
           servoMotor.write(255);
@@ -872,7 +922,11 @@ void loop()
   }
 
   // If switch 1 is pressed
-  if (Serial.available() > 0) 
+#ifndef VERSION_2_ZERO
+  if (Serial.available() > 0)
+#else
+  if (SerialUSB.available() > 0)
+#endif
   {
     data = updateTempSimulator();
     //data = Serial.read();
