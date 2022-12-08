@@ -56,6 +56,7 @@
 //#define NOPRIOR_HEAT
 
 #ifdef VERSION_2_ZERO
+  #define Serial SerialUSB
   #undef USE_LCD_KEYPAD_SHIELD
   #define USE_TC2
   #define USE_ETHERNET
@@ -72,12 +73,14 @@
 // ***** TCP IP CONFIG *****
 #ifdef USE_ETHERNET
   #include "Ethernet.h"
-  byte mac[] = {0xE8, 0x2A, 0xEA, 0x4B, 0x1F, 0xC3};
-  IPAddress ip(192, 168, 0, 177);
-  unsigned int port = 50001;
+  #include <EthernetUdp.h>
+  byte mac[] = {0xDC, 0xAE, 0x2E, 0xEE, 0xFE, 0xE0};
+  IPAddress ip(192, 168, 0, 209);
+  unsigned int localPort = 50001;
   
-  EthernetServer server(port);
-  EthernetClient client;
+  char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet,
+
+  EthernetUDP udp;
 #endif
 
 // ***** AUTOTUNE *****
@@ -224,7 +227,8 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define buzzerPin          7
   #define switchPin          A0
 #endif
-int data = 0;
+//int data = 0;
+uint8_t data = 0;
 
 // ***** PID CONTROL VARIABLES *****
 double setpoint;
@@ -333,10 +337,10 @@ void setup()
   #if defined (VERSION_2_ZERO)
     analogReadResolution(12);
     pinMode(10, OUTPUT);
-    pinMode(12, OUTPUT);
 
     digitalWrite(10, HIGH);
-    digitalWrite(12, HIGH);
+    digitalWrite(PIN_A2, HIGH);
+    digitalWrite(PIN_A3, HIGH);
   #endif
 
   // V2.0b -- Servo cooling
@@ -358,19 +362,26 @@ void setup()
   lcd.print("Reflow Oven 2.0b");
 
   // Serial communication at 57600 bps
-  #ifndef VERSION_2_ZERO
-    Serial.begin(57600);
-  #else
-    SerialUSB.begin(57600);
-    //while(!SerialUSB);
-  #endif
+  Serial.begin(57600);
+#ifdef VERSION_2_ZERO
+  while(!SerialUSB);
+#endif
   //pinMode(13, OUTPUT);
  // digitalWrite(13, LOW);
 
   // Ethernet communication initialization
 #ifdef USE_ETHERNET
+  Ethernet.init(12);
+  delay(1000);
   Ethernet.begin(mac, ip);
-  server.begin();
+  
+
+  if (Ethernet.hardwareStatus() == EthernetNoHardware)  Serial.println("WARNING: Ethernet shield was not found.  Sorry, can't run without hardware. :(");
+  else if (Ethernet.linkStatus() == LinkOFF)            Serial.println("Ethernet cable is not connected.");
+  else                                                  Serial.println("INFO: Ethernet OK");
+
+  udp.begin(localPort);
+  delay(1);
 #endif
 
   // Turn off LED (active low)
@@ -392,24 +403,14 @@ void setup()
 #endif
 
 #ifdef FINE_CONTROL
-  #ifndef VERSION_2_ZERO
-      Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
-      Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
-      Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
-    #else
-      SerialUSB.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
-      SerialUSB.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
-      SerialUSB.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
-    #endif
+  Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
+  Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
+  Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
 #endif
 }
 
 void loop()
 {
-#ifdef USE_ETHERNET
-  client = server.available();
-#endif
-
   // Current time
   unsigned long now;
 
@@ -466,19 +467,15 @@ void loop()
       char* buf = (char*) malloc(sizeof(char) * dataToSend.length() + 1);
 
       dataToSend.toCharArray(buf, dataToSend.length() + 1);
-      #ifndef VERSION_2_ZERO
-        Serial.println(buf);
-      #else
-        SerialUSB.println(buf);
-      #endif
+      //Serial.println(buf);
+      
 
       // Freeing the memory;
       free(buf);
 #else
-      if (client.connected())
-      {
-        client.print(dataToSend);
-      }
+      udp.beginPacket(udp.remoteIP(), udp.remotePort());
+      udp.write(dataToSend.c_str());
+      udp.endPacket();
 #endif
 
       
@@ -556,32 +553,20 @@ void loop()
         // If switch is pressed to start reflow process
         char dataIn[100] = {""};
 #ifndef USE_ETHERNET
-  #ifndef VERSION_2_ZERO
         if (Serial.available() > 0)
-  #else
-        if (SerialUSB.available() > 0)
-  #endif
         {
           //Leggo la stringa in arrivo dalla seriale.
           //char dataIn[100] = {""};
-  #ifndef VERSION_2_ZERO
           Serial.readBytes(dataIn, 100);
-  #else
-          SerialUSB.readBytes(dataIn, 100);
-  #endif
           String receivedString(dataIn);
           data = dataIn[0];
-          //Serial.println("Received string: " + receivedString);
+          Serial.println("SERIAL - Received string: " + receivedString);
 #else
-        if (client.connected() && client.available())
+        if (udp.parsePacket())
         {
-          String receivedString = "";
-          while (client.available())
-          {
-            char c = client.read();
-            receivedString = receivedString + c;
-          }
-          //Serial.println("Received string: " + receivedString);
+          udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
+          String receivedString = String(packetBuffer);
+          //memset(packetBuffer, 0, UDP_TX_PACKET_MAX_SIZE);
 #endif
           //Serial.println("1 dataIn[0] = " + data);
 
@@ -592,6 +577,7 @@ void loop()
           //altrimenti ho ricevuto solo un dato da inserire in data.
           if (iniPac != -1 && endPac != -1 && endPac - iniPac > 1)
           {
+            Serial.println("UDP - INFO: received message packet " + receivedString);
             String packetIn = receivedString;
             packetIn = packetIn.substring(iniPac + 1, endPac); //tolgo le parentesi
 
@@ -645,9 +631,11 @@ void loop()
 #ifndef USE_ETHERNET
             data = dataIn[0];
 #else
-            data = receivedString.toInt();
+            Serial.println("UDP - Received string: " + receivedString);
+            data = packetBuffer[0];
+            memset(packetBuffer, 0, UDP_TX_PACKET_MAX_SIZE);
 #endif
-            //Serial.println("2 dataIn[0] = " + data);
+            Serial.println("2 dataIn[0] = " + data);
           }
         }
 
@@ -677,11 +665,7 @@ void loop()
           //}
 
           // Ora mando l'header per il file CSV
-#ifndef VERSION_2_ZERO
           Serial.println("Time Setpoint Input Output");
-#else
-          SerialUSB.println("Time Setpoint Input Output");
-#endif
           // Intialize seconds timer for serial debug information
           nextCheck = millis();
           timerSeconds = 0;
@@ -922,11 +906,7 @@ void loop()
   }
 
   // If switch 1 is pressed
-#ifndef VERSION_2_ZERO
   if (Serial.available() > 0)
-#else
-  if (SerialUSB.available() > 0)
-#endif
   {
     data = updateTempSimulator();
     //data = Serial.read();

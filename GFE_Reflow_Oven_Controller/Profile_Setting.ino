@@ -90,7 +90,7 @@ void profileSet()
 
 void sendProfile()
 {
-#if defined FINE_CONTROL
+#ifdef FINE_CONTROL
   String dataToSend =
     "(" + type + ","
         + TEMPERATURE_SOAK_MIN      + ","
@@ -107,14 +107,18 @@ void sendProfile()
         + TEMPERATURE_REFLOW_MAX + ")";
 #endif
 
-#ifndef USE_ETHERNET
   char* buf = (char*)malloc(sizeof(char)*dataToSend.length()+1);
+#ifndef USE_ETHERNET
   dataToSend.toCharArray(buf, dataToSend.length()+1);
   Serial.println(buf);
-  free(buf);
+  
 #else
-  client.print(dataToSend);
+  //client.print(dataToSend);
+  udp.beginPacket(udp.remoteIP(), udp.remotePort());
+  udp.write(dataToSend.c_str());
+  udp.endPacket();
 #endif
+  free(buf);
 
   lcd.clear();
   lcd.setCursor(0,0);
