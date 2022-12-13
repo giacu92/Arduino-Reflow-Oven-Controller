@@ -53,7 +53,7 @@
 //#define USE_LCD_KEYPAD_SHIELD
 #define VERSION_2_ZERO
 #define FINE_CONTROL
-//#define NOPRIOR_HEAT
+#define NOPRIOR_HEAT
 
 #ifdef VERSION_2_ZERO
   #define Serial SerialUSB
@@ -76,9 +76,7 @@
   #include <EthernetUdp.h>
   byte mac[] = {0xDC, 0xAE, 0x2E, 0xEE, 0xFE, 0xE0};
   IPAddress ip(192, 168, 0, 209);
-  unsigned int localPort = 50001;
-  
-  char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  // buffer to hold incoming packet,
+  unsigned int localPort = 40292;
 
   EthernetUDP udp;
 #endif
@@ -227,8 +225,11 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define buzzerPin          7
   #define switchPin          A0
 #endif
-//int data = 0;
-uint8_t data = 0;
+int data = 0;
+//uint8_t data = 0;
+const char leftByte = 'd';
+const char rightByte = ':';
+const char stopByte = '&';
 
 // ***** PID CONTROL VARIABLES *****
 double setpoint;
@@ -564,9 +565,26 @@ void loop()
 #else
         if (udp.parsePacket())
         {
-          udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-          String receivedString = String(packetBuffer);
-          //memset(packetBuffer, 0, UDP_TX_PACKET_MAX_SIZE);
+          String receivedString = udp.readString();
+
+          if (receivedString.equals("GFE_reflowOven_uThrBro?!"))
+          {
+            Serial.println("UDP - Received Discovery String: " + receivedString);
+            String asReply = "helloFrom_GFEreflowOven__2.0b__";
+            for (int i=0; i < 4; i++)
+            {
+              asReply += String(ip[i], DEC);
+              if (i < 3)
+              {
+                asReply += ".";
+              }
+            }
+            asReply += "__" + String(localPort, DEC);
+
+            udp.beginPacket(udp.remoteIP(), udp.remotePort());
+            udp.write(asReply.c_str());
+            udp.endPacket();
+          }
 #endif
           //Serial.println("1 dataIn[0] = " + data);
 
@@ -632,14 +650,15 @@ void loop()
             data = dataIn[0];
 #else
             Serial.println("UDP - Received string: " + receivedString);
-            data = packetBuffer[0];
-            memset(packetBuffer, 0, UDP_TX_PACKET_MAX_SIZE);
+            data = receivedString.charAt(0);
 #endif
-            Serial.println("2 dataIn[0] = " + data);
+            receivedString = "";
+
+            //Serial.println("2 dataIn[0] = " + data);
           }
         }
 
-        if (analogRead(switchPin) < 30 || data == 10)
+        if (analogRead(switchPin) < 30 || data == rightByte)
         {
           data = 0;
 #ifdef USE_LCD_KEYPAD_SHIELD
@@ -905,13 +924,20 @@ void loop()
 #endif      
   }
 
+#ifndef USE_ETHERNET
   // If switch 1 is pressed
   if (Serial.available() > 0)
   {
     data = updateTempSimulator();
     //data = Serial.read();
-  }  
-  if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == 100)
+  }
+#else
+  if (udp.parsePacket())
+  {
+    data = udp.readString().charAt(0);
+  }
+#endif
+  if (analogRead(switchPin) > 400 && analogRead(switchPin) < 800 || data == leftByte)
   {
 #ifdef USE_LCD_KEYPAD_SHIELD
     delay(200);
@@ -934,7 +960,7 @@ void loop()
       profileSet();
 #endif
   }
-  else if (data == 36)
+  else if (data == stopByte)
   {
     // Turn off reflow process
     reflowStatus = REFLOW_STATUS_OFF;

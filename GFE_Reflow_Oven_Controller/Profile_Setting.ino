@@ -14,7 +14,7 @@ void menu_page()
     val = analogRead(switchPin);
   }
   
-  if (val < 30 || data == 10) //right button pressed => build profile
+  if (val < 30 || data == rightByte) //right button pressed => build profile
   {
     #ifdef USE_LCD_KEYPAD_SHIELD
       delay(200);
@@ -22,7 +22,7 @@ void menu_page()
     #endif
   }
     
-  else if (val >= 30 || data == 100)
+  else if (val >= 30 || data == leftByte)
   {    
     while(analogRead(switchPin) < 1000) { delay(100); } // debounce
     delay(100);
@@ -47,18 +47,26 @@ void profileSet()
   while(val > 1000 && data == 0) // need a pull-up resistor (10KΩ)
   {
     val = analogRead(switchPin);
+#ifndef USE_ETHERNET
     if(Serial.available() > 0)
     {
-      digitalWrite(13,HIGH);
+      //digitalWrite(13,HIGH);
       data = Serial.read();
       delay(100);
     }
     delay(100);
-    digitalWrite(13,LOW);
+    //digitalWrite(13,LOW);
+#else
+    if (udp.parsePacket())
+    {
+      String receivedString = udp.readString();
+      data = receivedString.charAt(0);
+    }
+#endif
     //Serial.println(reflowStatus);
   }
 
-  if (val < 30 || data == 10) //right button pressed => LEADED_PROFILE
+  if (val < 30 || data == rightByte) //right button pressed => LEADED_PROFILE
   {
     #ifdef USE_LCD_KEYPAD_SHIELD
       delay(200);
@@ -69,7 +77,7 @@ void profileSet()
     type = "  [L]";
   }
     
-  else if (val >= 30 || data == 100)
+  else if (val >= 30 || data == leftByte)
   {
     #ifdef USE_LCD_KEYPAD_SHIELD
       delay(200);
@@ -119,6 +127,7 @@ void sendProfile()
   udp.endPacket();
 #endif
   free(buf);
+  dataToSend = "";
 
   lcd.clear();
   lcd.setCursor(0,0);
