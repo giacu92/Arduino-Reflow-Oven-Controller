@@ -74,6 +74,7 @@
 #ifdef USE_ETHERNET
   #include "Ethernet.h"
   #include <EthernetUdp.h>
+  #include <ArduinoOTA.h>
   byte mac[] = {0xDC, 0xAE, 0x2E, 0xEE, 0xFE, 0xE0};
   IPAddress ip(192, 168, 0, 209);
   unsigned int localPort = 40292;
@@ -210,6 +211,7 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define ledRedPin          13 
   #define buzzerPin          PIN_A4 //TBC
   #define switchPin          PIN_A1
+  #define ethRstPin          11
 #else
   #define ssrPin             6
   #define spi_miso           5
@@ -334,19 +336,32 @@ void setup()
   reflowOvenPID.SetOutputLimits(0, windowSize);
   reflowOvenPID.SetSampleTime(PID_SAMPLE_TIME);
 
+  // Serial communication at 57600 bps
+  Serial.begin(57600);
+  /*
+  #ifdef VERSION_2_ZERO
+    while(!SerialUSB);
+  #endif
+  */
+
   // V2.0b -- Zero only
   #if defined (VERSION_2_ZERO)
     analogReadResolution(12);
     pinMode(10, OUTPUT);
+    pinMode(ethRstPin, OUTPUT);
+    digitalWrite(ethRstPin, LOW);
+    delay(1);
 
     digitalWrite(10, HIGH);
     digitalWrite(PIN_A2, HIGH);
     digitalWrite(PIN_A3, HIGH);
+    digitalWrite(ethRstPin, HIGH);
+    delay(2);
   #endif
 
   // V2.0b -- Servo cooling
   #if defined USE_SERVO
-    servoMotor.attach(PIN_A0);
+    servoMotor.attach(PIN_A0);\
 
     coolingPID.SetOutputLimits(0, 255);
     coolingPID.SetSampleTime(PID_SAMPLE_TIME);
@@ -362,11 +377,6 @@ void setup()
   lcd.setCursor(0, 1);
   lcd.print("Reflow Oven 2.0b");
 
-  // Serial communication at 57600 bps
-  Serial.begin(57600);
-#ifdef VERSION_2_ZERO
-  while(!SerialUSB);
-#endif
   //pinMode(13, OUTPUT);
  // digitalWrite(13, LOW);
 
@@ -380,6 +390,8 @@ void setup()
   if (Ethernet.hardwareStatus() == EthernetNoHardware)  Serial.println("WARNING: Ethernet shield was not found.  Sorry, can't run without hardware. :(");
   else if (Ethernet.linkStatus() == LinkOFF)            Serial.println("Ethernet cable is not connected.");
   else                                                  Serial.println("INFO: Ethernet OK");
+
+  ArduinoOTA.begin(Ethernet.localIP(), "Arduino", "password", InternalStorage);
 
   udp.begin(localPort);
   delay(1);
@@ -412,6 +424,7 @@ void setup()
 
 void loop()
 {
+  ArduinoOTA.poll();
   // Current time
   unsigned long now;
 
