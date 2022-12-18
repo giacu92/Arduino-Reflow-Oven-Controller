@@ -211,7 +211,7 @@ unsigned char degree[8]  = { 140, 146, 146, 140, 128, 128, 128, 128 };
   #define ledRedPin          13 
   #define buzzerPin          PIN_A4 //TBC
   #define switchPin          PIN_A1
-  #define ethRstPin          11
+  #define ethRstPin          0
 #else
   #define ssrPin             6
   #define spi_miso           5
@@ -361,7 +361,7 @@ void setup()
 
   // V2.0b -- Servo cooling
   #if defined USE_SERVO
-    servoMotor.attach(PIN_A0);\
+    servoMotor.attach(PIN_A0);
 
     coolingPID.SetOutputLimits(0, 255);
     coolingPID.SetSampleTime(PID_SAMPLE_TIME);
@@ -385,7 +385,6 @@ void setup()
   Ethernet.init(12);
   delay(1000);
   Ethernet.begin(mac, ip);
-  
 
   if (Ethernet.hardwareStatus() == EthernetNoHardware)  Serial.println("WARNING: Ethernet shield was not found.  Sorry, can't run without hardware. :(");
   else if (Ethernet.linkStatus() == LinkOFF)            Serial.println("Ethernet cable is not connected.");
