@@ -48,7 +48,7 @@
 #include <SPI.h>
 #include <LiquidCrystal.h>
 #include "Adafruit_MAX31855.h"
-#include <PID_v1.h>
+#include "PID_v1.h"
 
 //#define USE_LCD_KEYPAD_SHIELD
 #define VERSION_2_ZERO
@@ -75,11 +75,13 @@
   #include "Ethernet.h"
   #include <EthernetUdp.h>
   #include <ArduinoOTA.h>
+  #include <FastCRC.h>
   byte mac[] = {0xDC, 0xAE, 0x2E, 0xEE, 0xFE, 0xE0};
   IPAddress ip(192, 168, 0, 209);
   unsigned int localPort = 40292;
 
   EthernetUDP udp;
+  FastCRC16 CRC16;
 #endif
 
 // ***** AUTOTUNE *****
@@ -436,13 +438,14 @@ void loop()
     if (!isSimulation)
     {
       // Read current temperature
-      input = thermocouple.readCelsius();
+      input = getTemp();
+      /*input = thermocouple.readCelsius();
       #ifdef USE_TC2
         double in_tc2 = tc2.readCelsius();
         if (isnan(input))    { input = in_tc2; }
         else if (!isnan(in_tc2))   { input = (input + in_tc2) / 2.0; }   //average value of the two tc
       #endif
-      //Serial.println("TC input = " + (String)input);
+      Serial.println("TC input = " + (String)input);*/
     }
     else
     {
@@ -591,7 +594,11 @@ void loop()
                 asReply += ".";
               }
             }
-            asReply += "__" + String(localPort, DEC);
+            asReply += "__" + String(localPort, DEC) + "__";
+
+            uint8_t buf[100];
+            asReply.getBytes(buf, sizeof(asReply));
+            uint16_t crc[2]= {CRC16.ccitt(buf, sizeof(buf))};
 
             udp.beginPacket(udp.remoteIP(), udp.remotePort());
             udp.write(asReply.c_str());
@@ -681,11 +688,14 @@ void loop()
             profileSet();
 
           //Saving data for heating check:
-          checkTemperature = thermocouple.readCelsius();
+          //checkTemperature = thermocouple.readCelsius();
+          checkTemperature = getTemp();
+/*
 #ifdef USE_TC2
           double in_tc2 = tc2.readCelsius();
           if (!isnan(in_tc2))   { checkTemperature = (checkTemperature + in_tc2) / 2.0; }   //average value of the two tc
 #endif
+*/
           timeToCheck = 20;
           // Inizio il ciclo, mando i miei dati via seriale per settare il grafico.
           sendProfile();

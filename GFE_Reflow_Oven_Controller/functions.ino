@@ -229,3 +229,15 @@ byte updateTempSimulator()
     return dataIn[0];
   }
 }
+
+double getTemp()
+{
+  double t1 = thermocouple.readCelsius();
+  #ifdef USE_TC2
+    double in_tc2 = tc2.readCelsius();
+    if (isnan(t1))    { t1 = in_tc2; }
+    else if (!isnan(in_tc2))   { t1 = (t1 + in_tc2) / 2.0; }   //average value of the two tc
+  #endif
+  //Serial.println("TC input = " + (String)t1);
+  return t1;
+}
