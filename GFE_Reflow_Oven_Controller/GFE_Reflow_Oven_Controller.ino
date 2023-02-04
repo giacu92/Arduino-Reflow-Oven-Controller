@@ -289,7 +289,7 @@ int TEMPERATURE_REFLOW_MAX = 230;
 #endif
 
 int SOAK_TARGET_DURATION = 90;
-double SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
+double SOAK_TEMPERATURE_STEP_D = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
 
 String type = "";
 
@@ -417,9 +417,9 @@ void setup()
 #endif
 
 #ifdef FINE_CONTROL
-  Serial.println("PH_TEMPERATURE_STEP_INT = " + (String)PH_TEMPERATURE_STEP_D);
-  Serial.println("SOAK_TEMPERATURE_STEP_INT = " + (String)SOAK_TEMPERATURE_STEP_INT);
-  Serial.println("REFLOW_TEMPERATURE_STEP_INT = " + (String)REFLOW_TEMPERATURE_STEP_D);
+  Serial.println("PH_TEMPERATURE_STEP_D = " + (String)PH_TEMPERATURE_STEP_D);
+  Serial.println("SOAK_TEMPERATURE_STEP_D = " + (String)SOAK_TEMPERATURE_STEP_D);
+  Serial.println("REFLOW_TEMPERATURE_STEP_D = " + (String)REFLOW_TEMPERATURE_STEP_D);
 #endif
 }
 
@@ -656,7 +656,11 @@ void loop()
               PH_TEMPERATURE_STEP_D = (TEMPERATURE_SOAK_MIN - TEMPERATURE_PREHEAT_MIN) * (double)SOAK_MICRO_PERIOD / (double)PH_TARGET_DURATION / 1000;
               REFLOW_TEMPERATURE_STEP_D = (TEMPERATURE_REFLOW_MAX - TEMPERATURE_SOAK_MAX) * (double)SOAK_MICRO_PERIOD / (double)REFLOW_RU_TARGET_DURATION / 1000;
 #endif
-              SOAK_TEMPERATURE_STEP_INT = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
+              SOAK_TEMPERATURE_STEP_D = (TEMPERATURE_SOAK_MAX - TEMPERATURE_SOAK_MIN) * (double)SOAK_MICRO_PERIOD / (double)SOAK_TARGET_DURATION / 1000;
+
+              Serial.println("PH_TEMPERATURE_STEP_D = " + (String)PH_TEMPERATURE_STEP_D);
+              Serial.println("SOAK_TEMPERATURE_STEP_D = " + (String)SOAK_TEMPERATURE_STEP_D);
+              Serial.println("REFLOW_TEMPERATURE_STEP_D = " + (String)REFLOW_TEMPERATURE_STEP_D);
 
               type = " [C]";
               sendProfile();
@@ -716,8 +720,11 @@ void loop()
             // Ramp up to minimum soaking temperature
             setpoint = TEMPERATURE_SOAK_MIN;
 #else
-            setpoint = TEMPERATURE_PREHEAT_MIN + PH_TEMPERATURE_STEP_D;
+            setpoint = TEMPERATURE_PREHEAT_MIN + PH_TEMPERATURE_STEP_D;  
 #endif
+          Serial.print("setpoint: ");
+          Serial.println(setpoint);
+
           // Turn the PID on
           reflowOvenPID.SetMode(AUTOMATIC);
           // Proceed to preheat stage
@@ -781,7 +788,7 @@ void loop()
         reflowOvenPID.SetTunings(PID_KP_SOAK, PID_KI_SOAK, PID_KD_SOAK);
         // Ramp up to first section of soaking temperature
         /*setpoint = TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP;*/
-        setpoint = (double)TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP_INT;
+        setpoint = (double)TEMPERATURE_SOAK_MIN + SOAK_TEMPERATURE_STEP_D;
         // Proceed to soaking state
         reflowState = REFLOW_STATE_SOAK;
       }
@@ -809,7 +816,7 @@ void loop()
         timerSoak = millis() + SOAK_MICRO_PERIOD;
         // Increment micro setpoint
         /*setpoint += SOAK_TEMPERATURE_STEP;*/
-        setpoint += SOAK_TEMPERATURE_STEP_INT;
+        setpoint += SOAK_TEMPERATURE_STEP_D;
         if (setpoint > TEMPERATURE_SOAK_MAX)
         {
           // Set agressive PID parameters for reflow ramp
@@ -851,11 +858,8 @@ void loop()
         // Proceed to reflow Completion state
         reflowState = REFLOW_STATE_COMPLETE;
         endOfPrevProcess = true;
-#ifndef VERSION_2_ZERO
+
         Serial.print("eof");
-#else
-        Serial.print("eof");
-#endif
 
         #ifdef USE_SERVO
           servoMotor.write(255);
